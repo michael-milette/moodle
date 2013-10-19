@@ -691,7 +691,7 @@ class feedback_item_multichoice extends feedback_item_base {
                 </span>
                 <span class="feedback_item_radiolabel_<?php echo $hv.'_'.$align;?>">
                     <label for="<?php echo $inputid;?>">
-                        <?php echo text_to_html($radio, true, false, false);?>&nbsp;
+                        <?php echo format_text($radio, true, false, false);?>&nbsp;
                     </label>
                 </span>
             </li>
@@ -739,7 +739,7 @@ class feedback_item_multichoice extends feedback_item_base {
                 </span>
                 <span class="feedback_item_radiolabel_<?php echo $hv.'_'.$align;?>">
                     <label for="<?php echo $inputid;?>">
-                        <?php echo text_to_html($check, true, false, false);?>&nbsp;
+                        <?php echo format_text($check, true, false, false);?>&nbsp;
                     </label>
                 </span>
             </li>
@@ -780,7 +780,7 @@ class feedback_item_multichoice extends feedback_item_base {
                     }
                 ?>
                     <option value="<?php echo $index;?>" <?php echo $selected;?>>
-                        <?php echo text_to_html($dropdown, true, false, false);?>
+                        <?php echo format_text($dropdown, true, false, false);?>
                     </option>
                 <?php
                     $index++;
