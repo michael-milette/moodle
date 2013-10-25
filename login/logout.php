@@ -38,6 +38,8 @@ if ($login) {
 } else {
     $redirect = $CFG->wwwroot.'/';
 }
+$redirectlang = optional_param('lang', '', PARAM_LANG);
+$redirect .= (strlen($redirectlang) > 0 ? '?lang='.$redirectlang : '');
 
 if (!isloggedin()) {
     // no confirmation, user has already logged out
