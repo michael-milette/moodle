@@ -281,15 +281,9 @@ class assignment_online extends assignment_base {
 
     function preprocess_submission(&$submission) {
         if ($this->assignment->var1 && empty($submission->submissioncomment)) {  // comment inline
-            if ($this->usehtmleditor) {
-                // Convert to html, clean & copy student data to teacher
-                $submission->submissioncomment = format_text($submission->data1, $submission->data2);
-                $submission->format = FORMAT_HTML;
-            } else {
-                // Copy student data to teacher
-                $submission->submissioncomment = $submission->data1;
-                $submission->format = $submission->data2;
-            }
+            // Convert to html, clean & copy student data to teacher
+            $submission->submissioncomment = format_text($submission->data1, $submission->data2);
+            $submission->format = FORMAT_HTML;
         }
     }
 
@@ -406,7 +400,7 @@ class assignment_online extends assignment_base {
     }
 
     public function send_file($filearea, $args, $forcedownload, array $options=array()) {
-        global $USER;
+        global $USER, $CFG;
         require_capability('mod/assignment:view', $this->context);
 
         $fullpath = "/{$this->context->id}/mod_assignment/$filearea/".implode('/', $args);
@@ -422,7 +416,14 @@ class assignment_online extends assignment_base {
 
         \core\session\manager::write_close(); // Unlock session during file serving.
 
-        send_stored_file($file, 60*60, 0, true, $options);
+        // Make the lifetime significantly shorter,
+        // it would be better to have file revision numbers.
+        $lifetime = $CFG->filelifetime;
+        if ($lifetime > 60*6) {
+            $lifetime = 60*6;
+        }
+
+        send_stored_file($file, $lifetime, 0, true, $options);
     }
 
     /**

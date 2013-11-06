@@ -187,10 +187,7 @@ $grade = quiz_rescale_grade($attempt->sumgrades, $quiz, false);
 if ($options->marks >= question_display_options::MARK_AND_MAX && quiz_has_grades($quiz)) {
 
     if ($attempt->state != quiz_attempt::FINISHED) {
-        $summarydata['grade'] = array(
-            'title'   => get_string('grade', 'quiz'),
-            'content' => get_string('attemptstillinprogress', 'quiz'),
-        );
+        // Cannot display grade.
 
     } else if (is_null($grade)) {
         $summarydata['grade'] = array(
@@ -227,6 +224,9 @@ if ($options->marks >= question_display_options::MARK_AND_MAX && quiz_has_grades
         );
     }
 }
+
+// Any additional summary data from the behaviour.
+$summarydata = array_merge($summarydata, $attemptobj->get_additional_summary_data($options));
 
 // Feedback if there is any, and the user is allowed to see it now.
 $feedback = $attemptobj->get_overall_feedback($grade);

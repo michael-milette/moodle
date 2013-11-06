@@ -1600,6 +1600,8 @@ function xmldb_main_upgrade($oldversion) {
     }
 
     if ($oldversion < 2013021801.01) {
+        // This upgrade step is re-written under MDL-38228 (see below).
+        /*
         // Retrieve the list of course_sections as a recordset to save memory
         $coursesections = $DB->get_recordset('course_sections', null, 'course, id', 'id, course, sequence');
         foreach ($coursesections as $coursesection) {
@@ -1643,7 +1645,7 @@ function xmldb_main_upgrade($oldversion) {
             }
         }
         $coursesections->close();
-
+        */
         // Main savepoint reached.
         upgrade_main_savepoint(true, 2013021801.01);
     }
@@ -1693,6 +1695,9 @@ function xmldb_main_upgrade($oldversion) {
     // This is checking to see if the site has been running a specific version with a bug in it
     // because this upgrade step is slow and is only needed if the site has been running with the affected versions.
     if ($oldversion >= 2012062504.08 && $oldversion < 2012062504.13) {
+        // This upgrade step is re-written under MDL-38228 (see below).
+
+        /*
         // Retrieve the list of course_sections as a recordset to save memory.
         // This is to fix a regression caused by MDL-37939.
         // In this case the upgrade step is fixing records where:
@@ -1751,6 +1756,7 @@ function xmldb_main_upgrade($oldversion) {
         $coursesections->close();
 
         // No savepoint needed for this change.
+         */
     }
 
     if ($oldversion < 2013032200.01) {
@@ -2574,6 +2580,257 @@ function xmldb_main_upgrade($oldversion) {
 
         // Main savepoint reached.
         upgrade_main_savepoint(true, 2013092700.01);
+    }
+
+    if ($oldversion < 2013100400.01) {
+        // Add user_devices core table.
+
+        // Define field id to be added to user_devices.
+        $table = new xmldb_table('user_devices');
+
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null, null);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'id');
+        $table->add_field('appid', XMLDB_TYPE_CHAR, '128', null, XMLDB_NOTNULL, null, null, 'userid');
+        $table->add_field('name', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL, null, null, 'appid');
+        $table->add_field('model', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL, null, null, 'name');
+        $table->add_field('platform', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL, null, null, 'model');
+        $table->add_field('version', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL, null, null, 'platform');
+        $table->add_field('pushid', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'version');
+        $table->add_field('uuid', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'pushid');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'uuid');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'timecreated');
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_key('pushid-userid', XMLDB_KEY_UNIQUE, array('pushid', 'userid'));
+        $table->add_key('pushid-platform', XMLDB_KEY_UNIQUE, array('pushid', 'platform'));
+        $table->add_key('userid', XMLDB_KEY_FOREIGN, array('userid'), 'user', array('id'));
+
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013100400.01);
+    }
+
+    if ($oldversion < 2013100800.00) {
+
+        // Define field maxfraction to be added to question_attempts.
+        $table = new xmldb_table('question_attempts');
+        $field = new xmldb_field('maxfraction', XMLDB_TYPE_NUMBER, '12, 7', null, XMLDB_NOTNULL, null, '1', 'minfraction');
+
+        // Conditionally launch add field maxfraction.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013100800.00);
+    }
+
+    if ($oldversion < 2013100800.01) {
+        // Create a new 'user_password_resets' table.
+        $table = new xmldb_table('user_password_resets');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null, null);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, null);
+        $table->add_field('timerequested', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, null);
+        $table->add_field('timererequested', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0, null);
+        $table->add_field('token', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL, null, null, null);
+
+        // Adding keys to table.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_key('fk_userid', XMLDB_KEY_FOREIGN, array('userid'), 'user', array('id'));
+
+        // Conditionally launch create table.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+        upgrade_main_savepoint(true, 2013100800.01);
+    }
+
+    if ($oldversion < 2013100800.02) {
+        $sql = "INSERT INTO {user_preferences}(userid, name, value)
+                SELECT id, 'htmleditor', 'textarea' FROM {user} u where u.htmleditor = 0";
+        $DB->execute($sql);
+
+        // Define field htmleditor to be dropped from user
+        $table = new xmldb_table('user');
+        $field = new xmldb_field('htmleditor');
+
+        // Conditionally launch drop field requested
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013100800.02);
+    }
+
+    if ($oldversion < 2013100900.00) {
+
+        // Define field lifetime to be dropped from files_reference.
+        $table = new xmldb_table('files_reference');
+        $field = new xmldb_field('lifetime');
+
+        // Conditionally launch drop field lifetime.
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013100900.00);
+    }
+
+    if ($oldversion < 2013100901.00) {
+        // Fixing possible wrong MIME type for Java Network Launch Protocol (JNLP) files.
+        $select = $DB->sql_like('filename', '?', false);
+        $DB->set_field_select(
+            'files',
+            'mimetype',
+            'application/x-java-jnlp-file',
+            $select,
+            array('%.jnlp')
+        );
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013100901.00);
+    }
+
+    if ($oldversion < 2013102100.00) {
+        // Changing default value for the status of a course backup.
+        $table = new xmldb_table('backup_courses');
+        $field = new xmldb_field('laststatus', XMLDB_TYPE_CHAR, '1', null, XMLDB_NOTNULL, null, '5', 'lastendtime');
+
+        // Launch change of precision for field value
+        $dbman->change_field_precision($table, $field);
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013102100.00);
+    }
+
+    if ($oldversion < 2013102201.00) {
+        $params = array('plugin' => 'editor_atto', 'name' => 'version');
+        $attoversion = $DB->get_record('config_plugins',
+                                       $params,
+                                       'value',
+                                       IGNORE_MISSING);
+
+        if ($attoversion) {
+            $attoversion = floatval($attoversion->value);
+        }
+        // Only these versions that were part of 2.6 beta should be removed.
+        // Manually installed versions of 2.5 - or later releases for 2.6 installed
+        // via the plugins DB should not be uninstalled.
+        if ($attoversion && $attoversion > 2013051500.00 && $attoversion < 2013102201.00) {
+            // Remove all other associated config.
+            unset_all_config_for_plugin('editor_atto');
+            unset_all_config_for_plugin('atto_bold');
+            unset_all_config_for_plugin('atto_clear');
+            unset_all_config_for_plugin('atto_html');
+            unset_all_config_for_plugin('atto_image');
+            unset_all_config_for_plugin('atto_indent');
+            unset_all_config_for_plugin('atto_italic');
+            unset_all_config_for_plugin('atto_link');
+            unset_all_config_for_plugin('atto_media');
+            unset_all_config_for_plugin('atto_orderedlist');
+            unset_all_config_for_plugin('atto_outdent');
+            unset_all_config_for_plugin('atto_strike');
+            unset_all_config_for_plugin('atto_title');
+            unset_all_config_for_plugin('atto_underline');
+            unset_all_config_for_plugin('atto_unlink');
+            unset_all_config_for_plugin('atto_unorderedlist');
+
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013102201.00);
+    }
+
+    if ($oldversion < 2013102500.01) {
+        // Find all fileareas that have missing root folder entry and add the root folder entry.
+        if (empty($CFG->filesrootrecordsfixed)) {
+            $sql = "SELECT distinct f1.contextid, f1.component, f1.filearea, f1.itemid
+                FROM {files} f1 left JOIN {files} f2
+                    ON f1.contextid = f2.contextid
+                    AND f1.component = f2.component
+                    AND f1.filearea = f2.filearea
+                    AND f1.itemid = f2.itemid
+                    AND f2.filename = '.'
+                    AND f2.filepath = '/'
+                WHERE (f1.component <> 'user' or f1.filearea <> 'draft')
+                and f2.id is null";
+            $rs = $DB->get_recordset_sql($sql);
+            $defaults = array('filepath' => '/',
+                            'filename' => '.',
+                            'userid' => $USER->id,
+                            'filesize' => 0,
+                            'timecreated' => time(),
+                            'timemodified' => time(),
+                            'contenthash' => sha1(''));
+            foreach ($rs as $r) {
+                $pathhash = sha1("/$r->contextid/$r->component/$r->filearea/$r->itemid".'/.');
+                $DB->insert_record('files', (array)$r + $defaults +
+                        array('pathnamehash' => $pathhash));
+            }
+            $rs->close();
+            // To skip running the same script on the upgrade to the next major release.
+            set_config('filesrootrecordsfixed', 1);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013102500.01);
+    }
+
+    if ($oldversion < 2013110400.00) {
+
+        if (!check_dir_exists($CFG->dirroot . '/theme/mymobile', false)) {
+            // Delete from config_plugins.
+            $DB->delete_records('config_plugins', array('plugin' => 'theme_mymobile'));
+            // Delete the config logs.
+            $DB->delete_records('config_log', array('plugin' => 'theme_mymobile'));
+
+            // Replace the mymobile settings.
+            $DB->set_field('course', 'theme', 'clean', array('theme' => 'mymobile'));
+            $DB->set_field('course_categories', 'theme', 'clean', array('theme' => 'mymobile'));
+            $DB->set_field('user', 'theme', 'clean', array('theme' => 'mymobile'));
+            $DB->set_field('mnet_host', 'theme', 'clean', array('theme' => 'mymobile'));
+
+            // Replace the theme configs.
+            if (get_config('core', 'theme') == 'mymobile') {
+                set_config('theme', 'clean');
+            }
+            if (get_config('core', 'thememobile') == 'mymobile') {
+                set_config('thememobile', 'clean');
+            }
+            if (get_config('core', 'themelegacy') == 'mymobile') {
+                set_config('themelegacy', 'clean');
+            }
+            if (get_config('core', 'themetablet') == 'mymobile') {
+                set_config('themetablet', 'clean');
+            }
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013110400.00);
+    }
+
+    if ($oldversion < 2013110500.01) {
+        // MDL-38228. Corrected course_modules upgrade script instead of 2013021801.01.
+
+        // This upgrade script fixes the mismatches between DB fields course_modules.section
+        // and course_sections.sequence. It makes sure that each module is included
+        // in the sequence of at least one section.
+        // There is also a separate script for admins: admin/cli/fix_course_sortorder.php
+
+        // This script in included in each major version upgrade process so make sure we don't run it twice.
+        if (empty($CFG->movingmoduleupgradescriptwasrun)) {
+            upgrade_course_modules_sequences();
+
+            // To skip running the same script on the upgrade to the next major release.
+            set_config('movingmoduleupgradescriptwasrun', 1);
+        }
+
+        // Main savepoint reached.
+        upgrade_main_savepoint(true, 2013110500.01);
     }
 
     return true;

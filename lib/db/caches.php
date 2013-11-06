@@ -141,7 +141,7 @@ $definitions = array(
         'staticaccelerationsize' => 2,
     ),
 
-    // Cache used by the {@link plugin_manager} class.
+    // Cache used by the {@link core_plugin_manager} class.
     // NOTE: this must be a shared cache.
     'plugin_manager' => array(
         'mode' => cache_store::MODE_APPLICATION,
@@ -195,5 +195,21 @@ $definitions = array(
     'coursemodinfo' => array(
         'mode' => cache_store::MODE_APPLICATION,
         'simplekeys' => true,
+    ),
+    // This is the session user selections cache.
+    // It's a special cache that is used to record user selections that should persist for the lifetime of the session.
+    // Things such as which categories the user has expanded can be stored here.
+    // It uses simple keys and simple data, please ensure all uses conform to those two constraints.
+    'userselections' => array(
+        'mode' => cache_store::MODE_SESSION,
+        'simplekeys' => true,
+        'simpledata' => true
+    ),
+    // Used to cache user grades for conditional availability purposes.
+    'gradecondition' => array(
+        'mode' => cache_store::MODE_APPLICATION,
+        'staticacceleration' => true,
+        'staticaccelerationsize' => 2, // Should not be required for more than one user at a time.
+        'ttl' => 3600,
     ),
 );

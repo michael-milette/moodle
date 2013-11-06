@@ -77,6 +77,9 @@ class assign {
     /** @var stdClass the assignment record that contains the global settings for this assign instance */
     private $instance;
 
+    /** @var stdClass the grade_item record for this assign instance's primary grade item. */
+    private $gradeitem;
+
     /** @var context the context of the course module for this assign instance
      *               (or just the course if we are creating a new one)
      */
@@ -739,7 +742,7 @@ class assign {
             shift_course_mod_dates('assign',
                                     array('duedate', 'allowsubmissionsfromdate', 'cutoffdate'),
                                     $data->timeshift,
-                                    $data->courseid);
+                                    $data->courseid, $this->get_instance()->id);
             $status[] = array('component'=>$componentstr,
                               'item'=>get_string('datechanged'),
                               'error'=>false);
@@ -964,8 +967,12 @@ class assign {
      */
     protected function add_plugin_settings(assign_plugin $plugin, MoodleQuickForm $mform, & $pluginsenabled) {
         global $CFG;
-        if ($plugin->is_visible()) {
-
+        if ($plugin->is_visible() && !$plugin->is_configurable() && $plugin->is_enabled()) {
+            $name = $plugin->get_subtype() . '_' . $plugin->get_type() . '_enabled';
+            $pluginsenabled[] = $mform->createElement('hidden', $name, 1);
+            $mform->setType($name, PARAM_BOOL);
+            $plugin->get_settings($mform);
+        } else if ($plugin->is_visible() && $plugin->is_configurable()) {
             $name = $plugin->get_subtype() . '_' . $plugin->get_type() . '_enabled';
             $label = $plugin->get_name();
             $label .= ' ' . $this->get_renderer()->help_icon('enabled', $plugin->get_subtype() . '_' . $plugin->get_type());
@@ -1086,6 +1093,29 @@ class assign {
     }
 
     /**
+     * Get the primary grade item for this assign instance.
+     *
+     * @return stdClass The grade_item record
+     */
+    public function get_grade_item() {
+        if ($this->gradeitem) {
+            return $this->gradeitem;
+        }
+        $instance = $this->get_instance();
+        $params = array('itemtype' => 'mod',
+                        'itemmodule' => 'assign',
+                        'iteminstance' => $instance->id,
+                        'courseid' => $instance->course,
+                        'itemnumber' => 0);
+        $this->gradeitem = grade_item::fetch($params);
+        if (!$this->gradeitem) {
+            throw new coding_exception('Improper use of the assignment class. ' .
+                                       'Cannot load the grade item.');
+        }
+        return $this->gradeitem;
+    }
+
+    /**
      * Get the context of the current course.
      *
      * @return mixed context|null The course context
@@ -1200,13 +1230,15 @@ class assign {
                 $o .= '<input type="hidden" name="grademodified_' . $userid . '" value="' . $modified . '"/>';
                 if ($grade == -1 || $grade === null) {
                     $o .= '-';
-                    return $o;
                 } else {
-                    $o .= format_float($grade, 2) .
-                          '&nbsp;/&nbsp;' .
-                          format_float($this->get_instance()->grade, 2);
-                    return $o;
+                    $item = $this->get_grade_item();
+                    $o .= grade_format_gradevalue($grade, $item);
+                    if ($item->get_displaytype() == GRADE_DISPLAY_TYPE_REAL) {
+                        // If displaying the raw grade, also display the total value.
+                        $o .= '&nbsp;/&nbsp;' . format_float($this->get_instance()->grade, 2);
+                    }
                 }
+                return $o;
             }
 
         } else {
@@ -1528,8 +1560,8 @@ class assign {
         $timenow   = time();
 
         // Collect all submissions from the past 24 hours that require mailing.
-        $sql = 'SELECT a.course, a.name, a.blindmarking, a.revealidentities,
-                       g.*, g.id as gradeid, g.timemodified as lastmodified
+        $sql = 'SELECT g.id as gradeid, a.course, a.name, a.blindmarking, a.revealidentities,
+                       g.*, g.timemodified as lastmodified
                  FROM {assign} a
                  JOIN {assign_grades} g ON g.assignment = a.id
                  LEFT JOIN {assign_user_flags} uf ON uf.assignment = a.id AND uf.userid = g.userid
@@ -2730,21 +2762,6 @@ class assign {
                 $extensionduedate = $flags->extensionduedate;
             }
             $showedit = $this->submissions_open($userid) && ($this->is_any_submission_plugin_enabled());
-
-            if ($teamsubmission) {
-                $showsubmit = $showedit &&
-                              $teamsubmission &&
-                              ($teamsubmission->status != ASSIGN_SUBMISSION_STATUS_SUBMITTED) &&
-                              !$this->submission_empty($teamsubmission);
-            } else {
-                $showsubmit = $showedit &&
-                              $submission &&
-                              ($submission->status != ASSIGN_SUBMISSION_STATUS_SUBMITTED) &&
-                              !$this->submission_empty($submission);
-            }
-            if (!$this->get_instance()->submissiondrafts) {
-                $showsubmit = false;
-            }
             $viewfullnames = has_capability('moodle/site:viewfullnames', $this->get_course_context());
 
             $submissionstatus = new assign_submission_status($instance->allowsubmissionsfromdate,
@@ -2766,7 +2783,7 @@ class assign {
                                                              $this->get_course()->id,
                                                              assign_submission_status::GRADER_VIEW,
                                                              $showedit,
-                                                             $showsubmit,
+                                                             false,
                                                              $viewfullnames,
                                                              $extensionduedate,
                                                              $this->get_context(),
@@ -3203,11 +3220,11 @@ class assign {
     public function can_view_group_submission($groupid) {
         global $USER;
 
-        if (!is_enrolled($this->get_course_context(), $USER->id)) {
-            return false;
-        }
         if (has_capability('mod/assign:grade', $this->context)) {
             return true;
+        }
+        if (!is_enrolled($this->get_course_context(), $USER->id)) {
+            return false;
         }
         $members = $this->get_submission_group_members($groupid, true);
         foreach ($members as $member) {
@@ -3227,19 +3244,16 @@ class assign {
     public function can_view_submission($userid) {
         global $USER;
 
-        if (is_siteadmin()) {
+        if (!$this->is_active_user($userid) && !has_capability('moodle/course:viewsuspendedusers', $this->context)) {
+            return false;
+        }
+        if (has_capability('mod/assign:grade', $this->context)) {
             return true;
         }
         if (!is_enrolled($this->get_course_context(), $userid)) {
             return false;
         }
         if ($userid == $USER->id && has_capability('mod/assign:submit', $this->context)) {
-            return true;
-        }
-        if (!$this->is_active_user($userid) && !has_capability('moodle/course:viewsuspendedusers', $this->context)) {
-            return false;
-        }
-        if (has_capability('mod/assign:grade', $this->context)) {
             return true;
         }
         return false;
@@ -3564,22 +3578,9 @@ class assign {
                 }
             }
 
-            $showsubmit = ($submission || $teamsubmission) && $showlinks && $this->submissions_open($user->id);
-            if ($teamsubmission && ($teamsubmission->status == ASSIGN_SUBMISSION_STATUS_SUBMITTED)) {
-                $showsubmit = false;
-            }
-            if ($teamsubmission && $this->submission_empty($teamsubmission)) {
-                $showsubmit = false;
-            }
-            if ($submission && ($submission->status == ASSIGN_SUBMISSION_STATUS_SUBMITTED)) {
-                $showsubmit = false;
-            }
-            if ($submission && $this->submission_empty($submission)) {
-                $showsubmit = false;
-            }
-            if (!$this->get_instance()->submissiondrafts) {
-                $showsubmit = false;
-            }
+            $showsubmit = ($showlinks && $this->submissions_open($user->id));
+            $showsubmit = ($showsubmit && $this->show_submit_button($submission, $teamsubmission));
+
             $extensionduedate = null;
             if ($flags) {
                 $extensionduedate = $flags->extensionduedate;
@@ -3709,6 +3710,41 @@ class assign {
 
         }
         return $o;
+    }
+
+    /**
+     * Returns true if the submit subsission button should be shown to the user.
+     *
+     * @param stdClass $submission The users own submission record.
+     * @param stdClass $teamsubmission The users team submission record if there is one
+     * @return bool
+     */
+    protected function show_submit_button($submission = null, $teamsubmission = null) {
+        if ($teamsubmission) {
+            if ($teamsubmission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+                // The assignment submission has been completed.
+                return false;
+            } else if ($this->submission_empty($teamsubmission)) {
+                // There is nothing to submit yet.
+                return false;
+            } else if ($submission && $submission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+                // The user has already clicked the submit button on the team submission.
+                return false;
+            }
+        } else if ($submission) {
+            if ($submission->status === ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+                // The assignment submission has been completed.
+                return false;
+            } else if ($this->submission_empty($submission)) {
+                // There is nothing to submit.
+                return false;
+            }
+        } else {
+            // We've not got a valid submission or team submission.
+            return false;
+        }
+        // Last check is that this instance allows drafts.
+        return $this->get_instance()->submissiondrafts;
     }
 
     /**
@@ -3879,6 +3915,10 @@ class assign {
         $gradebookgrade = array();
         if ($grade->grade >= 0) {
             $gradebookgrade['rawgrade'] = $grade->grade;
+        }
+        // Allow "no grade" to be chosen.
+        if ($grade->grade == -1) {
+            $gradebookgrade['rawgrade'] = NULL;
         }
         $gradebookgrade['userid'] = $grade->userid;
         $gradebookgrade['usermodified'] = $grade->grader;
@@ -5491,8 +5531,8 @@ class assign {
                     $mform->addHelpButton('gradedisabled', 'gradeoutofhelp', 'assign');
                 }
             } else {
-                $grademenu = make_grades_menu($this->get_instance()->grade);
-                if (count($grademenu) > 0) {
+                $grademenu = array(-1 => get_string("nograde")) + make_grades_menu($this->get_instance()->grade);
+                if (count($grademenu) > 1) {
                     $gradingelement = $mform->addElement('select', 'grade', get_string('grade') . ':', $grademenu);
 
                     // The grade is already formatted with format_float so it needs to be converted back to an integer.

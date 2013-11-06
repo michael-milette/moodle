@@ -18,14 +18,16 @@ Feature: Add and configure blocks throughout the site
     And I log in as "manager1"
     And I follow "Turn editing on"
     And I add the "Comments" block
+    And I click on "Actions" "link" in the "Comments" "block"
     And I follow "Configure Comments block"
     And I fill the moodle form with:
       | Page contexts | Display throughout the entire site |
     And I press "Save changes"
     When I follow "Course 1"
-    Then I should see "Comments"
-    And I should see "Save comment"
+    Then I should see "Comments" in the "Comments" "block"
+    And I should see "Save comment" in the "Comments" "block"
     And I am on homepage
+    And I click on "Actions" "link" in the "Comments" "block"
     And I follow "Configure Comments block"
     And I fill the moodle form with:
       | Default weight | -10 (first) |

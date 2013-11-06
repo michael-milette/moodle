@@ -832,7 +832,7 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
         $newhashes = array();
         $filecount = 0;
         foreach ($draftfiles as $file) {
-            if (!$options['subdirs'] && ($file->get_filepath() !== '/' or $file->is_directory())) {
+            if (!$options['subdirs'] && $file->get_filepath() !== '/') {
                 continue;
             }
             if (!$allowreferences && $file->is_external_file()) {
@@ -928,8 +928,6 @@ function file_save_draft_area_files($draftitemid, $contextid, $component, $filea
                     $oldfile->get_referencefileid() != $newfile->get_referencefileid() ||
                     $oldfile->get_userid() != $newfile->get_userid())) {
                 $oldfile->replace_file_with($newfile);
-                // push changes to all local files that are referencing this file
-                $fs->update_references_to_storedfile($oldfile);
             }
 
             // unchanged file or directory - we keep it as is
@@ -1453,6 +1451,7 @@ function &get_mimetypes_array() {
         'jcw'  => array ('type'=>'text/xml', 'icon'=>'markup'),
         'jmt'  => array ('type'=>'text/xml', 'icon'=>'markup'),
         'jmx'  => array ('type'=>'text/xml', 'icon'=>'markup'),
+        'jnlp' => array ('type'=>'application/x-java-jnlp-file', 'icon'=>'markup'),
         'jpe'  => array ('type'=>'image/jpeg', 'icon'=>'jpeg', 'groups'=>array('image', 'web_image'), 'string'=>'image'),
         'jpeg' => array ('type'=>'image/jpeg', 'icon'=>'jpeg', 'groups'=>array('image', 'web_image'), 'string'=>'image'),
         'jpg'  => array ('type'=>'image/jpeg', 'icon'=>'jpeg', 'groups'=>array('image', 'web_image'), 'string'=>'image'),
@@ -2018,7 +2017,7 @@ function readfile_accel($file, $mimetype, $accelerate) {
 
     if (is_object($file)) {
         header('Etag: "' . $file->get_contenthash() . '"');
-        if (isset($_SERVER['HTTP_IF_NONE_MATCH']) and $_SERVER['HTTP_IF_NONE_MATCH'] === $file->get_contenthash()) {
+        if (isset($_SERVER['HTTP_IF_NONE_MATCH']) and trim($_SERVER['HTTP_IF_NONE_MATCH'], '"') === $file->get_contenthash()) {
             header('HTTP/1.1 304 Not Modified');
             return;
         }
@@ -2179,7 +2178,7 @@ function send_temp_file($path, $filename, $pathisstring=false) {
             print_error('filenotfound', 'error', $CFG->wwwroot.'/');
         }
         // executed after normal finish or abort
-        @register_shutdown_function('send_temp_file_finished', $path);
+        core_shutdown_manager::register_function('send_temp_file_finished', array($path));
     }
 
     // if user is using IE, urlencode the filename so that multibyte file name will show up correctly on popup
@@ -2189,7 +2188,7 @@ function send_temp_file($path, $filename, $pathisstring=false) {
 
     header('Content-Disposition: attachment; filename="'.$filename.'"');
     if (strpos($CFG->wwwroot, 'https://') === 0) { //https sites - watch out for IE! KB812935 and KB316431
-        header('Cache-Control: max-age=10');
+        header('Cache-Control: private, max-age=10');
         header('Expires: '. gmdate('D, d M Y H:i:s', 0) .' GMT');
         header('Pragma: ');
     } else { //normal http - prevent caching at all cost
@@ -2227,7 +2226,7 @@ function send_temp_file_finished($path) {
  * @category files
  * @param string $path Path of file on disk (including real filename), or actual content of file as string
  * @param string $filename Filename to send
- * @param int $lifetime Number of seconds before the file should expire from caches (default 24 hours)
+ * @param int $lifetime Number of seconds before the file should expire from caches (null means $CFG->filelifetime)
  * @param int $filter 0 (default)=no filtering, 1=all files, 2=html files only
  * @param bool $pathisstring If true (default false), $path is the content to send and not the pathname
  * @param bool $forcedownload If true (default false), forces download of file rather than view in browser/plugin
@@ -2238,20 +2237,15 @@ function send_temp_file_finished($path) {
  *                        and should not be reopened.
  * @return null script execution stopped unless $dontdie is true
  */
-function send_file($path, $filename, $lifetime = 'default' , $filter=0, $pathisstring=false, $forcedownload=false, $mimetype='', $dontdie=false) {
+function send_file($path, $filename, $lifetime = null , $filter=0, $pathisstring=false, $forcedownload=false, $mimetype='', $dontdie=false) {
     global $CFG, $COURSE;
 
     if ($dontdie) {
         ignore_user_abort(true);
     }
 
-    // MDL-11789, apply $CFG->filelifetime here
-    if ($lifetime === 'default') {
-        if (!empty($CFG->filelifetime)) {
-            $lifetime = $CFG->filelifetime;
-        } else {
-            $lifetime = 86400;
-        }
+    if ($lifetime === 'default' or is_null($lifetime)) {
+        $lifetime = $CFG->filelifetime;
     }
 
     \core\session\manager::write_close(); // Unlock session during file serving.
@@ -2275,15 +2269,19 @@ function send_file($path, $filename, $lifetime = 'default' , $filter=0, $pathiss
     }
 
     if ($lifetime > 0) {
+        $private = '';
+        if (isloggedin() and !isguestuser()) {
+            $private = ' private,';
+        }
         $nobyteserving = false;
-        header('Cache-Control: max-age='.$lifetime);
+        header('Cache-Control:'.$private.' max-age='.$lifetime);
         header('Expires: '. gmdate('D, d M Y H:i:s', time() + $lifetime) .' GMT');
         header('Pragma: ');
 
     } else { // Do not cache files in proxies and browsers
         $nobyteserving = true;
         if (strpos($CFG->wwwroot, 'https://') === 0) { //https sites - watch out for IE! KB812935 and KB316431
-            header('Cache-Control: max-age=10');
+            header('Cache-Control: private, max-age=10');
             header('Expires: '. gmdate('D, d M Y H:i:s', 0) .' GMT');
             header('Pragma: ');
         } else { //normal http - prevent caching at all cost
@@ -2353,13 +2351,13 @@ function send_file($path, $filename, $lifetime = 'default' , $filter=0, $pathiss
  *
  * @category files
  * @param stored_file $stored_file local file object
- * @param int $lifetime Number of seconds before the file should expire from caches (default 24 hours)
+ * @param int $lifetime Number of seconds before the file should expire from caches (null means $CFG->filelifetime)
  * @param int $filter 0 (default)=no filtering, 1=all files, 2=html files only
  * @param bool $forcedownload If true (default false), forces download of file rather than view in browser/plugin
  * @param array $options additional options affecting the file serving
  * @return null script execution stopped unless $options['dontdie'] is true
  */
-function send_stored_file($stored_file, $lifetime=86400 , $filter=0, $forcedownload=false, array $options=array()) {
+function send_stored_file($stored_file, $lifetime=null, $filter=0, $forcedownload=false, array $options=array()) {
     global $CFG, $COURSE;
 
     if (empty($options['filename'])) {
@@ -2372,6 +2370,10 @@ function send_stored_file($stored_file, $lifetime=86400 , $filter=0, $forcedownl
         $dontdie = false;
     } else {
         $dontdie = true;
+    }
+
+    if ($lifetime === 'default' or is_null($lifetime)) {
+        $lifetime = $CFG->filelifetime;
     }
 
     if (!empty($options['preview'])) {
@@ -2439,13 +2441,17 @@ function send_stored_file($stored_file, $lifetime=86400 , $filter=0, $forcedownl
     }
 
     if ($lifetime > 0) {
-        header('Cache-Control: max-age='.$lifetime);
+        $private = '';
+        if (isloggedin() and !isguestuser()) {
+            $private = ' private,';
+        }
+        header('Cache-Control:'.$private.' max-age='.$lifetime);
         header('Expires: '. gmdate('D, d M Y H:i:s', time() + $lifetime) .' GMT');
         header('Pragma: ');
 
     } else { // Do not cache files in proxies and browsers
         if (strpos($CFG->wwwroot, 'https://') === 0) { //https sites - watch out for IE! KB812935 and KB316431
-            header('Cache-Control: max-age=10');
+            header('Cache-Control: private, max-age=10');
             header('Expires: '. gmdate('D, d M Y H:i:s', 0) .' GMT');
             header('Pragma: ');
         } else { //normal http - prevent caching at all cost
@@ -4549,10 +4555,8 @@ function file_pluginfile($relativepath, $forcedownload, $preview = null) {
                 send_file_not_found();
             }
 
-            $lifetime = isset($CFG->filelifetime) ? $CFG->filelifetime : 86400;
-
             // finally send the file
-            send_stored_file($file, $lifetime, 0, false, array('preview' => $preview));
+            send_stored_file($file, null, 0, false, array('preview' => $preview));
         }
 
         $filefunction = $component.'_pluginfile';

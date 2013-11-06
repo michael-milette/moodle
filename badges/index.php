@@ -79,13 +79,14 @@ if ($type == BADGE_TYPE_SITE) {
     $PAGE->set_context(context_system::instance());
     $PAGE->set_pagelayout('admin');
     $PAGE->set_heading($title . ': ' . $hdr);
-    navigation_node::override_active_url(new moodle_url('/badges/index.php', array('type' => BADGE_TYPE_SITE)));
+    navigation_node::override_active_url(new moodle_url('/badges/index.php', array('type' => BADGE_TYPE_SITE)), true);
 } else {
     require_login($course);
+    $coursecontext = context_course::instance($course->id);
     $title = get_string('coursebadges', 'badges');
-    $PAGE->set_context(context_course::instance($course->id));
+    $PAGE->set_context($coursecontext);
     $PAGE->set_pagelayout('course');
-    $PAGE->set_heading($course->fullname . ': ' . $hdr);
+    $PAGE->set_heading(format_string($course->fullname, true, array('context' => $coursecontext)) . ': ' . $hdr);
     navigation_node::override_active_url(
         new moodle_url('/badges/index.php', array('type' => BADGE_TYPE_COURSE, 'id' => $course->id))
     );

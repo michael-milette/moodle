@@ -929,7 +929,7 @@ function clean_param($param, $type) {
         case PARAM_COMPONENT:
             // We do not want any guessing here, either the name is correct or not
             // please note only normalised component names are accepted.
-            if (!preg_match('/^[a-z]+(_[a-z][a-z0-9_]*)?[a-z0-9]$/', $param)) {
+            if (!preg_match('/^[a-z]+(_[a-z][a-z0-9_]*)?[a-z0-9]+$/', $param)) {
                 return '';
             }
             if (strpos($param, '__') !== false) {
@@ -1595,8 +1595,8 @@ function purge_all_caches() {
     theme_reset_all_caches();
     get_string_manager()->reset_caches();
     core_text::reset_caches();
-    if (class_exists('plugin_manager')) {
-        plugin_manager::reset_caches();
+    if (class_exists('core_plugin_manager')) {
+        core_plugin_manager::reset_caches();
     }
 
     // Bump up cacherev field for all courses.
@@ -2187,8 +2187,16 @@ function userdate($date, $format = '', $timezone = 99, $fixday = true, $fixhour 
  */
 function date_format_string($date, $format, $tz = 99) {
     global $CFG;
+
+    $localewincharset = null;
+    // Get the calendar type user is using.
+    if ($CFG->ostype == 'WINDOWS') {
+        $calendartype = \core_calendar\type_factory::get_calendar_instance();
+        $localewincharset = $calendartype->locale_win_charset();
+    }
+
     if (abs($tz) > 13) {
-        if ($CFG->ostype == 'WINDOWS' and $localewincharset = get_string('localewincharset', 'langconfig')) {
+        if ($localewincharset) {
             $format = core_text::convert($format, 'utf-8', $localewincharset);
             $datestring = strftime($format, $date);
             $datestring = core_text::convert($datestring, $localewincharset, 'utf-8');
@@ -2196,7 +2204,7 @@ function date_format_string($date, $format, $tz = 99) {
             $datestring = strftime($format, $date);
         }
     } else {
-        if ($CFG->ostype == 'WINDOWS' and $localewincharset = get_string('localewincharset', 'langconfig')) {
+        if ($localewincharset) {
             $format = core_text::convert($format, 'utf-8', $localewincharset);
             $datestring = gmstrftime($format, $date);
             $datestring = core_text::convert($datestring, $localewincharset, 'utf-8');
@@ -2685,8 +2693,10 @@ function dst_offset_on($time, $strtimezone = null) {
  * @return int
  */
 function find_day_in_month($startday, $weekday, $month, $year) {
+    $calendartype = \core_calendar\type_factory::get_calendar_instance();
 
     $daysinmonth = days_in_month($month, $year);
+    $daysinweek = count($calendartype->get_weekdays());
 
     if ($weekday == -1) {
         // Don't care about weekday, so return:
@@ -2696,46 +2706,40 @@ function find_day_in_month($startday, $weekday, $month, $year) {
     }
 
     // From now on we 're looking for a specific weekday.
-
     // Give "end of month" its actual value, since we know it.
     if ($startday == -1) {
         $startday = -1 * $daysinmonth;
     }
 
     // Starting from day $startday, the sign is the direction.
-
     if ($startday < 1) {
-
         $startday = abs($startday);
-        $lastmonthweekday  = strftime('%w', mktime(12, 0, 0, $month, $daysinmonth, $year));
+        $lastmonthweekday = dayofweek($daysinmonth, $month, $year);
 
         // This is the last such weekday of the month.
         $lastinmonth = $daysinmonth + $weekday - $lastmonthweekday;
         if ($lastinmonth > $daysinmonth) {
-            $lastinmonth -= 7;
+            $lastinmonth -= $daysinweek;
         }
 
         // Find the first such weekday <= $startday.
         while ($lastinmonth > $startday) {
-            $lastinmonth -= 7;
+            $lastinmonth -= $daysinweek;
         }
 
         return $lastinmonth;
-
     } else {
-
-        $indexweekday = strftime('%w', mktime(12, 0, 0, $month, $startday, $year));
+        $indexweekday = dayofweek($startday, $month, $year);
 
         $diff = $weekday - $indexweekday;
         if ($diff < 0) {
-            $diff += 7;
+            $diff += $daysinweek;
         }
 
         // This is the first such weekday of the month equal to or after $startday.
         $firstfromindex = $startday + $diff;
 
         return $firstfromindex;
-
     }
 }
 
@@ -2749,7 +2753,8 @@ function find_day_in_month($startday, $weekday, $month, $year) {
  * @return int
  */
 function days_in_month($month, $year) {
-    return intval(date('t', mktime(12, 0, 0, $month, 1, $year)));
+    $calendartype = \core_calendar\type_factory::get_calendar_instance();
+    return $calendartype->get_num_days_in_month($year, $month);
 }
 
 /**
@@ -2763,8 +2768,8 @@ function days_in_month($month, $year) {
  * @return int
  */
 function dayofweek($day, $month, $year) {
-    // I wonder if this is any different from strftime('%w', mktime(12, 0, 0, $month, $daysinmonth, $year, 0));.
-    return intval(date('w', mktime(12, 0, 0, $month, $day, $year)));
+    $calendartype = \core_calendar\type_factory::get_calendar_instance();
+    return $calendartype->get_weekday($year, $month, $day);
 }
 
 // USER AUTHENTICATION AND LOGIN.
@@ -3562,6 +3567,19 @@ function ismoving($courseid) {
 function fullname($user, $override=false) {
     global $CFG, $SESSION;
 
+    // Get all of the name fields.
+    $allnames = get_all_user_name_fields();
+    if ($CFG->debugdeveloper) {
+        foreach ($allnames as $allname) {
+            if (!array_key_exists($allname, $user)) {
+                // If all the user name fields are not set in the user object, then notify the programmer that it needs to be fixed.
+                debugging('You need to update your sql to include additional name fields in the user object.', DEBUG_DEVELOPER);
+                // Message has been sent, no point in sending the message multiple times.
+                break;
+            }
+        }
+    }
+
     if (!isset($user->firstname) and !isset($user->lastname)) {
         return '';
     }
@@ -3589,17 +3607,11 @@ function fullname($user, $override=false) {
         return get_string('fullnamedisplay', null, $user);
     }
 
-    // Get all of the name fields.
-    $allnames = get_all_user_name_fields();
     $requirednames = array();
     // With each name, see if it is in the display name template, and add it to the required names array if it is.
     foreach ($allnames as $allname) {
         if (strpos($template, $allname) !== false) {
             $requirednames[] = $allname;
-            // If the field is in the template but not set in the user object then notify the programmer that it needs to be fixed.
-            if (!array_key_exists($allname, $user)) {
-                debugging('You need to update your sql to include additional name fields in the user object.', DEBUG_DEVELOPER);
-            }
         }
     }
 
@@ -4127,6 +4139,9 @@ function delete_user(stdClass $user) {
         return false;
     }
 
+    // Keep user record before updating it, as we have to pass this to user_deleted event.
+    $olduser = clone $user;
+
     // Keep a copy of user context, we need it for event.
     $usercontext = context_user::instance($user->id);
 
@@ -4206,10 +4221,16 @@ function delete_user(stdClass $user) {
             array(
                 'objectid' => $user->id,
                 'context' => $usercontext,
-                'other' => array('user' => (array)clone $user)
+                'other' => array(
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'idnumber' => $user->idnumber,
+                    'picture' => $user->picture,
+                    'mnethostid' => $user->mnethostid
+                    )
                 )
             );
-    $event->add_record_snapshot('user', $updateuser);
+    $event->add_record_snapshot('user', $olduser);
     $event->trigger();
 
     // We will update the user's timemodified, as it will be passed to the user_deleted event, which
@@ -4429,7 +4450,6 @@ function complete_user_login($user) {
             'other' => array('username' => $USER->username),
         )
     );
-    $event->add_record_snapshot('user', $user);
     $event->trigger();
 
     if (isguestuser()) {
@@ -4640,6 +4660,14 @@ function update_internal_user_password($user, $password) {
     if ($passwordchanged || $algorithmchanged) {
         $DB->set_field('user', 'password',  $hashedpassword, array('id' => $user->id));
         $user->password = $hashedpassword;
+
+        // Trigger event.
+        $event = \core\event\user_updated::create(array(
+             'objectid' => $user->id,
+             'context' => context_user::instance($user->id)
+        ));
+        $event->add_record_snapshot('user', $user);
+        $event->trigger();
     }
 
     return true;
@@ -4793,6 +4821,7 @@ function set_login_session_preferences() {
     $SESSION->justloggedin = true;
 
     unset($SESSION->lang);
+    unset($SESSION->load_navigation_admin);
 }
 
 
@@ -4830,10 +4859,6 @@ function delete_course($courseorid, $showfeedback = true) {
     // Delete the course and related context instance.
     context_helper::delete_instance(CONTEXT_COURSE, $courseid);
 
-    // We will update the course's timemodified, as it will be passed to the course_deleted event,
-    // which should know about this updated property, as this event is meant to pass the full course record.
-    $course->timemodified = time();
-
     $DB->delete_records("course", array("id" => $courseid));
     $DB->delete_records("course_format_options", array("courseid" => $courseid));
 
@@ -4841,8 +4866,11 @@ function delete_course($courseorid, $showfeedback = true) {
     $event = \core\event\course_deleted::create(array(
         'objectid' => $course->id,
         'context' => $context,
-        'other' => array('shortname' => $course->shortname,
-                         'fullname' => $course->fullname)
+        'other' => array(
+            'shortname' => $course->shortname,
+            'fullname' => $course->fullname,
+            'idnumber' => $course->idnumber
+            )
     ));
     $event->add_record_snapshot('course', $course);
     $event->trigger();
@@ -5136,18 +5164,24 @@ function remove_course_contents($courseid, $showfeedback = true, array $options 
  * @param array $fields array of date fields from mod table
  * @param int $timeshift time difference
  * @param int $courseid
+ * @param int $modid (Optional) passed if specific mod instance in course needs to be updated.
  * @return bool success
  */
-function shift_course_mod_dates($modname, $fields, $timeshift, $courseid) {
+function shift_course_mod_dates($modname, $fields, $timeshift, $courseid, $modid = 0) {
     global $CFG, $DB;
     include_once($CFG->dirroot.'/mod/'.$modname.'/lib.php');
 
     $return = true;
+    $params = array($timeshift, $courseid);
     foreach ($fields as $field) {
         $updatesql = "UPDATE {".$modname."}
                           SET $field = $field + ?
                         WHERE course=? AND $field<>0";
-        $return = $DB->execute($updatesql, array($timeshift, $courseid)) && $return;
+        if ($modid) {
+            $updatesql .= ' AND id=?';
+            $params[] = $modid;
+        }
+        $return = $DB->execute($updatesql, $params) && $return;
     }
 
     $refreshfunction = $modname.'_refresh_events';
@@ -5601,32 +5635,24 @@ function email_to_user($user, $from, $subject, $messagetext, $messagehtml = '', 
 
     global $CFG;
 
-    if (empty($user) || empty($user->email)) {
-        $nulluser = 'User is null or has no email';
-        error_log($nulluser);
-        if (CLI_SCRIPT) {
-            mtrace('Error: lib/moodlelib.php email_to_user(): '.$nulluser);
-        }
+    if (empty($user) or empty($user->id)) {
+        debugging('Can not send email to null user', DEBUG_DEVELOPER);
+        return false;
+    }
+
+    if (empty($user->email)) {
+        debugging('Can not send email to user without email: '.$user->id, DEBUG_DEVELOPER);
         return false;
     }
 
     if (!empty($user->deleted)) {
-        // Do not mail deleted users.
-        $userdeleted = 'User is deleted';
-        error_log($userdeleted);
-        if (CLI_SCRIPT) {
-            mtrace('Error: lib/moodlelib.php email_to_user(): '.$userdeleted);
-        }
+        debugging('Can not send email to deleted user: '.$user->id, DEBUG_DEVELOPER);
         return false;
     }
 
     if (!empty($CFG->noemailever)) {
         // Hidden setting for development sites, set in config.php if needed.
-        $noemail = 'Not sending email due to noemailever config setting';
-        error_log($noemail);
-        if (CLI_SCRIPT) {
-            mtrace('Error: lib/moodlelib.php email_to_user(): '.$noemail);
-        }
+        debugging('Not sending email due to $CFG->noemailever config setting', DEBUG_NORMAL);
         return true;
     }
 
@@ -5857,6 +5883,15 @@ function setnew_password_and_mail($user, $fasthash = false) {
 
     $hashedpassword = hash_internal_user_password($newpassword, $fasthash);
     $DB->set_field('user', 'password', $hashedpassword, array('id' => $user->id));
+    $user->password = $hashedpassword;
+
+    // Trigger event.
+    $event = \core\event\user_updated::create(array(
+        'objectid' => $user->id,
+        'context' => context_user::instance($user->id)
+    ));
+    $event->add_record_snapshot('user', $user);
+    $event->trigger();
 
     $a = new stdClass();
     $a->firstname   = fullname($user, true);
@@ -5953,23 +5988,27 @@ function send_confirmation_email($user) {
  * Sends a password change confirmation email.
  *
  * @param stdClass $user A {@link $USER} object
+ * @param stdClass $resetrecord An object tracking metadata regarding password reset request
  * @return bool Returns true if mail was sent OK and false if there was an error.
  */
-function send_password_change_confirmation_email($user) {
+function send_password_change_confirmation_email($user, $resetrecord) {
     global $CFG;
 
     $site = get_site();
     $supportuser = core_user::get_support_user();
+    $pwresetmins = isset($CFG->pwresettime) ? floor($CFG->pwresettime / MINSECS) : 30;
 
     $data = new stdClass();
     $data->firstname = $user->firstname;
     $data->lastname  = $user->lastname;
+    $data->username  = $user->username;
     $data->sitename  = format_string($site->fullname);
-    $data->link      = $CFG->httpswwwroot .'/login/forgot_password.php?p='. $user->secret .'&s='. urlencode($user->username);
+    $data->link      = $CFG->httpswwwroot .'/login/forgot_password.php?token='. $resetrecord->token;
     $data->admin     = generate_email_signoff();
+    $data->resetminutes = $pwresetmins;
 
-    $message = get_string('emailpasswordconfirmation', '', $data);
-    $subject = get_string('emailpasswordconfirmationsubject', '', format_string($site->fullname));
+    $message = get_string('emailresetconfirmation', '', $data);
+    $subject = get_string('emailresetconfirmationsubject', '', format_string($site->fullname));
 
     // Directly email rather than using the messaging system to ensure its not routed to a popup or jabber.
     return email_to_user($user, $supportuser, $subject, $message);
@@ -6149,12 +6188,18 @@ function get_file_packer($mimetype='application/zip') {
 
     switch ($mimetype) {
         case 'application/zip':
-        case 'application/vnd.moodle.backup':
         case 'application/vnd.moodle.profiling':
             $classname = 'zip_packer';
             break;
-        case 'application/x-tar':
-            // One day we hope to support tar - for the time being it is a pipe dream.
+
+        case 'application/x-gzip' :
+            $classname = 'tgz_packer';
+            break;
+
+        case 'application/vnd.moodle.backup':
+            $classname = 'mbz_packer';
+            break;
+
         default:
             return false;
     }
@@ -8542,58 +8587,6 @@ function fullclone($thing) {
     return unserialize(serialize($thing));
 }
 
-
-/**
- * This function expects to called during shutdown should be set via register_shutdown_function() in lib/setup.php .
- *
- * @return void
- */
-function moodle_request_shutdown() {
-    global $CFG;
-
-    // Help apache server if possible.
-    $apachereleasemem = false;
-    if (function_exists('apache_child_terminate') && function_exists('memory_get_usage')
-            && ini_get_bool('child_terminate')) {
-
-        $limit = (empty($CFG->apachemaxmem) ? 64*1024*1024 : $CFG->apachemaxmem); // 64MB default.
-        if (memory_get_usage() > get_real_size($limit)) {
-            $apachereleasemem = $limit;
-            @apache_child_terminate();
-        }
-    }
-
-    // Deal with perf logging.
-    if (defined('MDL_PERF') || (!empty($CFG->perfdebug) and $CFG->perfdebug > 7)) {
-        if ($apachereleasemem) {
-            error_log('Mem usage over '.$apachereleasemem.': marking Apache child for reaping.');
-        }
-        if (defined('MDL_PERFTOLOG')) {
-            $perf = get_performance_info();
-            error_log("PERF: " . $perf['txt']);
-        }
-        if (defined('MDL_PERFINC')) {
-            $inc = get_included_files();
-            $ts  = 0;
-            foreach ($inc as $f) {
-                if (preg_match(':^/:', $f)) {
-                    $fs  =  filesize($f);
-                    $ts  += $fs;
-                    $hfs =  display_size($fs);
-                    error_log(substr($f, strlen($CFG->dirroot)) . " size: $fs ($hfs)"
-                              , null, null, 0);
-                } else {
-                    error_log($f , null, null, 0);
-                }
-            }
-            if ($ts > 0 ) {
-                $hts = display_size($ts);
-                error_log("Total size of files included: $ts ($hts)");
-            }
-        }
-    }
-}
-
  /**
   * If new messages are waiting for the current user, then insert
   * JavaScript to pop up the messaging window into the page
@@ -8625,7 +8618,8 @@ function message_popup_window() {
     }
 
     // Got unread messages so now do another query that joins with the user table.
-    $messagesql = "SELECT m.id, m.smallmessage, m.fullmessageformat, m.notification, u.firstname, u.lastname
+    $namefields = get_all_user_name_fields(true, 'u');
+    $messagesql = "SELECT m.id, m.smallmessage, m.fullmessageformat, m.notification, $namefields
                      FROM {message} m
                      JOIN {message_working} mw ON m.id=mw.unreadmessageid
                      JOIN {message_processors} p ON mw.processorid=p.id

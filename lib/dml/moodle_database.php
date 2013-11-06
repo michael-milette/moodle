@@ -337,6 +337,19 @@ abstract class moodle_database {
     }
 
     /**
+     * Returns transaction trace for debugging purposes.
+     * @private to be used by core only
+     * @return array or null if not in transaction.
+     */
+    public function get_transaction_start_backtrace() {
+        if (!$this->transactions) {
+            return null;
+        }
+        $lowesttransaction = end($this->transactions);
+        return $lowesttransaction->get_backtrace();
+    }
+
+    /**
      * Closes the database connection and releases all resources
      * and memory (especially circular memory references).
      * Do NOT use connect() again, create a new instance if needed.
@@ -348,24 +361,8 @@ abstract class moodle_database {
         }
         $this->disposed = true;
         if ($this->transactions) {
-            // this should not happen, it usually indicates wrong catching of exceptions,
-            // because all transactions should be finished manually or in default exception handler.
-            // unfortunately we can not access global $CFG any more and can not print debug,
-            // the diagnostic info should be printed in footer instead
-            $lowesttransaction = end($this->transactions);
-            $backtrace = $lowesttransaction->get_backtrace();
-
-            if (defined('PHPUNIT_TEST') and PHPUNIT_TEST) {
-                //no need to log sudden exits in our PHPUnit test cases
-            } else {
-                error_log('Potential coding error - active database transaction detected when disposing database:'."\n".format_backtrace($backtrace, true));
-            }
             $this->force_transaction_rollback();
         }
-        // Always terminate sessions here to make it consistent,
-        // this is needed because we need to save session to db before closing it.
-        \core\session\manager::write_close();
-        $this->used_for_db_sessions = false;
 
         if ($this->temptables) {
             $this->temptables->dispose();
@@ -376,10 +373,6 @@ abstract class moodle_database {
             $this->database_manager = null;
         }
         $this->tables  = null;
-
-        // We do not need the MUC cache any more,
-        // if we did not keep it as property it might be already gone before we saved the session.
-        $this->metacache = null;
     }
 
     /**
@@ -968,24 +961,9 @@ abstract class moodle_database {
      */
     public function reset_caches() {
         $this->tables = null;
-        $this->metacache = null;
         // Purge MUC as well
         $identifiers = array('dbfamily' => $this->get_dbfamily(), 'settings' => $this->get_settings_hash());
         cache_helper::purge_by_definition('core', 'databasemeta', $identifiers);
-    }
-
-    /**
-     * Call before using $this->metacache.
-     *
-     * Note: this is necessary because we want to write to database in shutdown handler
-     *       and it needs to use the caches, but MUC would be already disposed.
-     */
-    protected function init_caches() {
-        if ($this->metacache) {
-            return;
-        }
-        $properties = array('dbfamily' => $this->get_dbfamily(), 'settings' => $this->get_settings_hash());
-        $this->metacache = cache::make('core', 'databasemeta', $properties);
     }
 
     /**
@@ -2330,7 +2308,7 @@ abstract class moodle_database {
         }
 
         // now enable transactions again
-        $this->transactions = array(); // unfortunately all unfinished exceptions are kept in memory
+        $this->transactions = array();
         $this->force_rollback = false;
     }
 

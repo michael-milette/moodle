@@ -173,6 +173,8 @@ $string['everyoneisnowsubscribed'] = 'Everyone is now subscribed to this forum';
 $string['everyoneissubscribed'] = 'Everyone is subscribed to this forum';
 $string['existingsubscribers'] = 'Existing subscribers';
 $string['exportdiscussion'] = 'Export whole discussion';
+$string['forcedreadtracking'] = 'Allow forced read tracking';
+$string['forcedreadtracking_desc'] = 'Allows forums to be set to forced read tracking. Will result in decreased performance for some users, particularly on courses with many forums and posts. When off, any forums previously set to Forced are treated as optional.';
 $string['forcessubscribe'] = 'This forum forces everyone to be subscribed';
 $string['forum'] = 'Forum';
 $string['forum:addinstance'] = 'Add a new forum';
@@ -221,6 +223,7 @@ $string['forum:viewrating'] = 'View the total rating you received';
 $string['forum:viewsubscribers'] = 'View subscribers';
 $string['generalforum'] = 'Standard forum for general use';
 $string['generalforums'] = 'General forums';
+$string['hiddenforumpost'] = 'Hidden forum post';
 $string['inforum'] = 'in {$a}';
 $string['introblog'] = 'The posts in this forum were copied here automatically from blogs of users in this course because those blog entries are no longer available';
 $string['intronews'] = 'General news and announcements';
@@ -336,6 +339,7 @@ $string['pluginname'] = 'Forum';
 $string['postadded'] = '<p>Your post was successfully added.</p> <p>You have {$a} to edit it if you want to make any changes.</p>';
 $string['postaddedsuccess'] = 'Your post was successfully added.';
 $string['postaddedtimeleft'] = 'You have {$a} to edit it if you want to make any changes.';
+$string['postbyuser'] = '{$a->post} by {$a->user}';
 $string['postincontext'] = 'See this post in context';
 $string['postmailinfo'] = 'This is a copy of a message posted on the {$a} website.
 
@@ -430,16 +434,14 @@ $string['timestartenderror'] = 'Display end date cannot be earlier than the star
 $string['trackforum'] = 'Track unread posts';
 $string['tracking'] = 'Track';
 $string['trackingoff'] = 'Off';
-$string['trackingon'] = 'On';
+$string['trackingon'] = 'Forced';
 $string['trackingoptional'] = 'Optional';
 $string['trackingtype'] = 'Read tracking';
 $string['trackingtype_help'] = 'If enabled, participants can track read and unread posts in the forum and in discussions. There are three options:
 
-* Optional - Participants can choose whether to turn tracking on or off via a link in the administration block
-* On - Tracking is always on
-* Off - Read and unread posts are not tracked
-
-Note: Forum tracking must also be enabled in the user\'s profile settings.';
+* Optional - Participants can choose whether to turn tracking on or off via a link in the administration block. Forum tracking must also be enabled in the user\'s profile settings.
+* Forced - Tracking is always on, regardless of user setting. Available depending on administrative setting.
+* Off - Read and unread posts are not tracked.';
 $string['unread'] = 'Unread';
 $string['unreadposts'] = 'Unread posts';
 $string['unreadpostsnumber'] = '{$a} unread posts';
