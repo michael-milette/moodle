@@ -983,7 +983,8 @@ function file_rewrite_urls_to_pluginfile($text, $draftitemid, $forcehttps = fals
 
     $usercontext = context_user::instance($USER->id);
 
-    $wwwroot = $CFG->wwwroot;
+    $wwwroot = parse_url($CFG->wwwroot,PHP_URL_PATH);
+    $text = str_ireplace("$CFG->wwwroot", "$wwwroot", $text);
     if ($forcehttps) {
         $wwwroot = str_replace('http://', 'https://', $wwwroot);
     }
