@@ -353,23 +353,27 @@ class feedback_item_multichoicerated extends feedback_item_base {
 
         //print the question and label
         $inputname = $item->typ . '_' . $item->id;
-        echo '<div class="feedback_item_label_'.$align.'">';
         if ($info->subtype == 'd') {
+            echo '<div class="feedback_item_label_'.$align.'">';
             echo '<label for="'. $inputname .'">';
-            echo format_text($item->name.$requiredmark, true, false, false);
-            if ($highlightrequire AND $item->required AND intval($value) <= 0) {
-                echo '<br class="error"><span id="id_error_'.$inputname.'" class="error"> '.get_string('err_required', 'form').
-                    '</span><br id="id_error_break_'.$inputname.'" class="error" >';
-            }
-            echo '</label>';
         } else {
-            echo format_text($item->name . $requiredmark, FORMAT_HTML, array('noclean' => true, 'para' => false));
-            if ($highlightrequire AND $item->required AND intval($value) <= 0) {
-                echo '<br class="error"><span id="id_error_'.$inputname.'" class="error"> '.get_string('err_required', 'form').
-                    '</span><br id="id_error_break_'.$inputname.'" class="error" >';
-            }
+            // if (r)adio buttons or (c)heckboxes
+            echo '<fieldset>';
+            echo '<legend class="feedback_item_label_'.$align.'">';
         }
-        echo '</div>';
+        echo format_text($item->name . $requiredmark, FORMAT_HTML, array('noclean' => true, 'para' => false));
+        if ($highlightrequire AND $item->required AND intval($value) <= 0) {
+            echo '<br class="error"><span id="id_error_'.$inputname.'" class="error"> '.get_string('err_required', 'form').
+                '</span><br id="id_error_break_'.$inputname.'" class="error" >';
+        }
+
+        if ($info->subtype == 'd') {
+            echo '</label>';
+            echo '</div>';
+        } else {
+            // if (r)adio buttons or (c)heckboxes
+            echo '</legend>';
+        }
 
         //print the presentation
         echo '<div class="feedback_item_presentation_'.$align.'">';
@@ -382,6 +386,10 @@ class feedback_item_multichoicerated extends feedback_item_base {
                 break;
         }
         echo '</div>';
+        if ($info->subtype == 'r' || $info->subtype == 'c') {
+            // if (r)adio buttons or (c)heckboxes
+            echo '</fieldset>';
+        }
     }
 
     /**

@@ -689,6 +689,8 @@ function file_get_drafarea_files($draftitemid, $filepath = '/') {
                 $foldername = explode('/', trim($item->filepath, '/'));
                 $item->fullname = trim(array_pop($foldername), '/');
                 $item->thumbnail = $OUTPUT->pix_url(file_folder_icon(90))->out(false);
+                $item->thumbnail_title = '';
+                $item->thumbnail_alt = get_string('folder');
             } else {
                 // do NOT use file browser here!
                 $item->mimetype = get_mimetype_description($file);
@@ -701,6 +703,8 @@ function file_get_drafarea_files($draftitemid, $filepath = '/') {
                 $item->url = $itemurl->out();
                 $item->icon = $OUTPUT->pix_url(file_file_icon($file, 24))->out(false);
                 $item->thumbnail = $OUTPUT->pix_url(file_file_icon($file, 90))->out(false);
+                $item->thumbnail_title = '';
+                $item->thumbnail_alt = $item->mimetype;
                 if ($imageinfo = $file->get_imageinfo()) {
                     $item->realthumbnail = $itemurl->out(false, array('preview' => 'thumb', 'oid' => $file->get_timemodified()));
                     $item->realicon = $itemurl->out(false, array('preview' => 'tinyicon', 'oid' => $file->get_timemodified()));

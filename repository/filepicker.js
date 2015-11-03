@@ -77,7 +77,11 @@ YUI.add('moodle-core_filepicker', function(Y) {
 
     /** set image source to src, if there is preview, remember it in lazyloading.
      *  If there is a preview and it was already loaded, use it. */
-    Y.Node.prototype.setImgSrc = function(src, realsrc, lazyloading) {
+    Y.Node.prototype.setImgSrc = function(src, realsrc, lazyloading, alt) {
+        if (typeof alt == "undefined" || alt == null) {
+            alt = ''; // All images must have an ALT tag, even if it is empty.
+        }
+        this.set('alt', alt);
         if (realsrc) {
             if (M.core_filepicker.loadedpreviews[realsrc]) {
                 this.set('src', realsrc).addClass('realpreview');
@@ -184,9 +188,9 @@ YUI.add('moodle-core_filepicker', function(Y) {
         /** return file description (different attributes in FileManager and FilePicker) */
         var file_get_description = function(node) {
             var description = '';
-            if (node.description) {
+            if (typeof node.description != "undefined" || node.description != null) {
                 description = node.description;
-            } else if (node.thumbnail_title) {
+            } else if (typeof node.thumbnail_title != "undefined" || node.thumbnail_title != null) {
                 description = node.thumbnail_title;
             } else {
                 description = file_get_filename(node);
@@ -205,7 +209,7 @@ YUI.add('moodle-core_filepicker', function(Y) {
             el.get('children').addClass(tmpnodedata.className);
             if (node.icon) {
                 el.one('.fp-icon').appendChild(Y.Node.create('<img/>'));
-                el.one('.fp-icon img').setImgSrc(node.icon, node.realicon, lazyloading);
+                el.one('.fp-icon img').setImgSrc(node.icon, node.realicon, lazyloading, node.thumbnail_alt);
             }
             // create node
             tmpnodedata.html = el.getContent();
@@ -309,7 +313,7 @@ YUI.add('moodle-core_filepicker', function(Y) {
             el.one('.fp-filename').setContent(o.value);
             if (o.data['icon']) {
                 el.one('.fp-icon').appendChild(Y.Node.create('<img/>'));
-                el.one('.fp-icon img').setImgSrc(o.data['icon'], o.data['realicon'], lazyloading);
+                el.one('.fp-icon img').setImgSrc(o.data['icon'], o.data['realicon'], lazyloading, o.data['thumbnail_alt']);
             }
             if (options.rightclickcallback) {
                 el.get('children').addClass('fp-hascontextmenu');
@@ -411,7 +415,7 @@ YUI.add('moodle-core_filepicker', function(Y) {
                         alt: Y.Escape.html(node.thumbnail_alt ? node.thumbnail_alt : file_get_filename(node))}).
                     setStyle('maxWidth', ''+width+'px').
                     setStyle('maxHeight', ''+height+'px');
-                img.setImgSrc(src, node.realthumbnail, lazyloading);
+                img.setImgSrc(src, node.realthumbnail, lazyloading, node.thumbnail_alt);
                 imgdiv.appendChild(img);
                 element.on('click', function(e, nd) {
                     if (options.rightclickcallback && e.target.ancestor('.fp-iconview .fp-contextmenu', true)) {
@@ -1736,6 +1740,10 @@ M.core_filepicker.init = function(Y, options) {
                             scope.options.formcallback.apply(formcallback_scope, [o]);
                         }
                 }, true);
+            }, this);
+            content.one('.fp-upload-cancel').on('click', function(e) {
+                e.preventDefault();
+                scope.hide();
             }, this);
         },
         /** setting handlers and labels for elements in toolbar. Called once during the initial render of filepicker */

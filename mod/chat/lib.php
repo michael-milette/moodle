@@ -754,6 +754,7 @@ function chat_format_message_manually($message, $courseid, $sender, $currentuser
     // And now check for special cases.
     $patternto = '#^\s*To\s([^:]+):(.*)#';
     $special = false;
+    $outinfobasic  = '';
 
     if (substr($text, 0, 5) == 'beep ') {
         // It's a beep!

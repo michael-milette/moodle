@@ -358,8 +358,8 @@ class feedback_item_numeric extends feedback_item_base {
                 break;
         }
         echo '</span>';
-        if ($highlightrequire AND (!$this->check_value($value, $item))) {
-            echo '<br class="error"><span id="id_error_'.$inputname.'" class="error"> '.get_string('err_required', 'form').
+        if ($highlightrequire AND (!$this->check_value($value, $item, $returnerr))) {
+            echo '<br class="error"><span id="id_error_'.$inputname.'" class="error"> '.$returnerr.
                 '</span><br id="id_error_break_'.$inputname.'" class="error" >';
         }
         echo '</label>';
@@ -444,13 +444,14 @@ class feedback_item_numeric extends feedback_item_base {
         echo '</div>';
     }
 
-    public function check_value($value, $item) {
+    public function check_value($value, $item, &$errmsg = NULL) {
         $value = str_replace($this->sep_dec, FEEDBACK_DECIMAL, $value);
         //if the item is not required, so the check is true if no value is given
         if ((!isset($value) OR $value == '') AND $item->required != 1) {
             return true;
         }
         if (!is_numeric($value)) {
+            $errmsg = get_string('err_numeric', 'form');
             return false;
         }
 
@@ -470,11 +471,15 @@ class feedback_item_numeric extends feedback_item_base {
             case ($range_from === '-' AND is_numeric($range_to)):
                 if (floatval($value) <= $range_to) {
                     return true;
+                } else {
+                    $errmsg = get_string('err_maxvalue', 'feedback', $range_to);
                 }
                 break;
             case (is_numeric($range_from) AND $range_to === '-'):
                 if (floatval($value) >= $range_from) {
                     return true;
+                } else {
+                    $errmsg = get_string('err_minvalue', 'feedback', $range_from);
                 }
                 break;
             case ($range_from === '-' AND $range_to === '-'):
@@ -483,6 +488,9 @@ class feedback_item_numeric extends feedback_item_base {
             default:
                 if (floatval($value) >= $range_from AND floatval($value) <= $range_to) {
                     return true;
+                } else {
+                    $a = (object)array('min' => $range_from, 'max' => $range_to);
+                    $errmsg = get_string('err_rangevalue', 'feedback', $a);
                 }
                 break;
         }

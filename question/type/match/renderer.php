@@ -47,6 +47,12 @@ class qtype_match_renderer extends qtype_with_combined_feedback_renderer {
         $result .= html_writer::tag('div', $question->format_questiontext($qa),
                 array('class' => 'qtext'));
 
+        if ($qa->get_state() == question_state::$invalid) {
+            $result .= html_writer::nonempty_tag('div',
+                    $question->get_validation_error($response),
+                    array('class' => 'validationerror'));
+        }
+
         $result .= html_writer::start_tag('div', array('class' => 'ablock'));
         $result .= html_writer::start_tag('table', array('class' => 'answer'));
         $result .= html_writer::start_tag('tbody');
@@ -93,12 +99,6 @@ class qtype_match_renderer extends qtype_with_combined_feedback_renderer {
         $result .= html_writer::end_tag('table');
 
         $result .= html_writer::end_tag('div'); // Closes <div class="ablock">.
-
-        if ($qa->get_state() == question_state::$invalid) {
-            $result .= html_writer::nonempty_tag('div',
-                    $question->get_validation_error($response),
-                    array('class' => 'validationerror'));
-        }
 
         return $result;
     }

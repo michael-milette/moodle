@@ -3985,8 +3985,7 @@ function forum_print_attachments($post, $cm, $type) {
             $path = file_encode_url($CFG->wwwroot.'/pluginfile.php', '/'.$context->id.'/mod_forum/attachment/'.$post->id.'/'.$filename);
 
             if ($type == 'html') {
-                $output .= "<a href=\"$path\">$iconimage</a> ";
-                $output .= "<a href=\"$path\">".s($filename)."</a>";
+                $output .= "<a href=\"$path\">".$iconimage."&nbsp;".s($filename)."</a>";
                 if ($canexport) {
                     $button->set_callback_options('forum_portfolio_caller', array('postid' => $post->id, 'attachment' => $file->get_id()), 'mod_forum');
                     $button->set_format_by_file($file);

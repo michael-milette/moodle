@@ -306,7 +306,7 @@ $string['numberofteams'] = 'Groups';
 $string['offline'] = 'No online submissions required';
 $string['open'] = 'Open';
 $string['outof'] = '{$a->current} out of {$a->total}';
-$string['overdue'] = '<font color="red">Assignment is overdue by: {$a}</font>';
+$string['overdue'] = '<span class="flagged-tag">Assignment is overdue by: {$a}</span>';
 $string['outlinegrade'] = 'Grade: {$a}';
 $string['page-mod-assign-x'] = 'Any assignment module page';
 $string['page-mod-assign-view'] = 'Assignment module main and submission page';

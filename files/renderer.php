@@ -113,7 +113,8 @@ class core_files_renderer extends plugin_renderer_base {
                 array('invalidjson', 'repository'), array('popupblockeddownload', 'repository'),
                 array('unknownoriginal', 'repository'), array('confirmdeletefolder', 'repository'),
                 array('confirmdeletefilewithhref', 'repository'), array('confirmrenamefolder', 'repository'),
-                array('confirmrenamefile', 'repository'), array('newfolder', 'repository'), array('edit', 'moodle')
+                array('confirmrenamefile', 'repository'), array('newfolder', 'repository'), array('edit', 'moodle'),
+                array('makeafolder', 'moodle'), array('delete', 'moodle')
             )
         );
         if ($this->page->requires->should_create_one_time_item_now('core_file_managertemplate')) {
@@ -277,7 +278,7 @@ class core_files_renderer extends plugin_renderer_base {
         <div class="fp-filename"></div>
     </div>
     </a>
-    <a class="fp-contextmenu" href="#">'.$this->pix_icon('i/menu', '▶').'</a>
+    <a class="fp-contextmenu" href="#">'.$this->pix_icon('i/menu', get_string('edit')).'</a>
 </div>';
         return $rv;
     }
@@ -304,7 +305,7 @@ class core_files_renderer extends plugin_renderer_base {
     <span class="fp-reficons2"></span>
     <span class="fp-filename"></span>
     </a>
-    <a class="fp-contextmenu" href="#" onclick="return false;">'.$this->pix_icon('i/menu', '▶').'</a>
+    <a class="fp-contextmenu" href="#" onclick="return false;">'.$this->pix_icon('i/menu', get_string('edit')).'</a>
 </span>';
         return $rv;
     }
@@ -590,34 +591,34 @@ class core_files_renderer extends plugin_renderer_base {
                     </div>
                     <div class="fp-tb-refresh">
                         <a title="'. get_string('refresh', 'repository') .'" href="#">
-                            <img alt=""  src="'.$this->pix_url('a/refresh').'" />
+                            <img alt="'. get_string('refresh', 'repository') .'"  src="'.$this->pix_url('a/refresh').'" />
                         </a>
                     </div>
                     <div class="fp-tb-logout">
                         <a title="'. get_string('logout', 'repository') .'" href="#">
-                            <img alt="" src="'.$this->pix_url('a/logout').'" />
+                            <img alt="'. get_string('logout', 'repository') .'" src="'.$this->pix_url('a/logout').'" />
                         </a>
                     </div>
                     <div class="fp-tb-manage">
                         <a title="'. get_string('settings', 'repository') .'" href="#">
-                            <img alt="" src="'.$this->pix_url('a/setting').'" />
+                            <img alt="'. get_string('settings', 'repository') .'" src="'.$this->pix_url('a/setting').'" />
                         </a>
                     </div>
                     <div class="fp-tb-help">
                         <a title="'. get_string('help', 'repository') .'" href="#">
-                            <img alt="" src="'.$this->pix_url('a/help').'" />
+                            <img alt="'. get_string('help', 'repository') .'" src="'.$this->pix_url('a/help').'" />
                         </a>
                     </div>
                     <div class="fp-tb-message"></div>
                 </div>
                 <div class="fp-viewbar">
-                    <a role="button" title="'. get_string('displayicons', 'repository') .'" class="fp-vb-icons" href="#">
-                        <img alt="" src="'. $this->pix_url('fp/view_icon_active', 'theme') .'" />
+                    <a title="'. get_string('displayicons', 'repository') .'" class="fp-vb-icons" href="#">
+                        <img alt="'. get_string('displayicons', 'repository').'" src="'. $this->pix_url('fp/view_icon_active', 'theme') .'" />
                     </a>
-                    <a role="button" title="'. get_string('displaydetails', 'repository') .'" class="fp-vb-details" href="#">
-                        <img alt="" src="'. $this->pix_url('fp/view_list_active', 'theme') .'" />
+                    <a title="'. get_string('displaydetails', 'repository') .'" class="fp-vb-details" href="#">
+                        <img alt="'. get_string('displaydetails', 'repository').'" src="'. $this->pix_url('fp/view_list_active', 'theme') .'" />
                     </a>
-                    <a role="button" title="'. get_string('displaytree', 'repository') .'" class="fp-vb-tree" href="#">
+                    <a title="'. get_string('displaytree', 'repository') .'" class="fp-vb-tree" href="#">
                         <img alt="" src="'. $this->pix_url('fp/view_tree_active', 'theme') .'" />
                     </a>
                 </div>
@@ -822,7 +823,7 @@ class core_files_renderer extends plugin_renderer_base {
      * 'fp-file', 'fp-saveas', 'fp-setauthor', 'fp-setlicense'. Inside each of them must have
      * one input element (or select in case of fp-setlicense). They may also have labels.
      *
-     * Element with class 'fp-upload-btn' will hold onclick event for uploading the file;
+     * Element with class 'fp-upload-btn' and 'fp-upload-cancel' will hold onclick events;
      *
      * Please note that some fields may be hidden using CSS if this is part of quickupload form
      *
@@ -860,8 +861,9 @@ class core_files_renderer extends plugin_renderer_base {
                 </div>
             </div>
         </form>
-        <div class="mdl-align">
+        <div class="mdl-align fp-select-buttons">
             <button class="fp-upload-btn btn-primary btn">'.get_string('upload', 'repository').'</button>
+            <button class="fp-upload-cancel">'.get_string('cancel').'</button>
         </div>
     </div>
 </div> ';

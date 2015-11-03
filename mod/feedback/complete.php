@@ -416,6 +416,15 @@ if ($feedback_can_submit) {
 
         //print the items
         if (is_array($feedbackitems)) {
+            //check, if there exists required-elements
+            $params = array('feedback' => $feedback->id, 'required' => 1);
+            $countreq = $DB->count_records('feedback_item', $params);
+            if ($countreq > 0) {
+                echo '<span class="fdescription required">';
+                echo get_string('somefieldsrequired', 'form', '<img alt="'.get_string('requiredelement', 'form').
+                    '" src="'.$OUTPUT->pix_url('req') .'" class="req" />');
+                echo '</span>';
+            }
             echo $OUTPUT->box_start('feedback_form');
             echo '<form action="complete.php" class="mform" method="post" onsubmit=" ">';
             echo '<input type="hidden" name="sesskey" value="'.sesskey().'" />';
@@ -436,15 +445,6 @@ if ($feedback_can_submit) {
                     break;
             }
             echo $OUTPUT->box_end();
-            //check, if there exists required-elements
-            $params = array('feedback' => $feedback->id, 'required' => 1);
-            $countreq = $DB->count_records('feedback_item', $params);
-            if ($countreq > 0) {
-                echo '<span class="fdescription required">';
-                echo get_string('somefieldsrequired', 'form', '<img alt="'.get_string('requiredelement', 'form').
-                    '" src="'.$OUTPUT->pix_url('req') .'" class="req" />');
-                echo '</span>';
-            }
             echo $OUTPUT->box_start('feedback_items');
 
             unset($startitem);

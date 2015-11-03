@@ -126,12 +126,14 @@ class repository_wikimedia extends repository {
         $keyword->value = '';
         $maxwidth = array(
             'label' => get_string('maxwidth', 'repository_wikimedia').': ',
+            'id'    => 'input_maxwidth',
             'type' => 'text',
             'name' => 'wikimedia_maxwidth',
             'value' => get_user_preferences('repository_wikimedia_maxwidth', WIKIMEDIA_IMAGE_SIDE_LENGTH),
         );
         $maxheight = array(
             'label' => get_string('maxheight', 'repository_wikimedia').': ',
+            'id'    => 'input_maxheight',
             'type' => 'text',
             'name' => 'wikimedia_maxheight',
             'value' => get_user_preferences('repository_wikimedia_maxheight', WIKIMEDIA_IMAGE_SIDE_LENGTH),

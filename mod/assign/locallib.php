@@ -3880,10 +3880,9 @@ class assign {
 
         $data = new stdClass();
         $adminconfig = $this->get_admin_config();
-        $requiresubmissionstatement = $this->get_instance()->requiresubmissionstatement &&
-                                       !empty($adminconfig->submissionstatement);
+        $requiresubmissionstatement = $this->get_instance()->requiresubmissionstatement;
 
-        $submissionstatement = '';
+        $submissionstatement = get_string('submissionstatementdefault', 'assign');
         if (!empty($adminconfig->submissionstatement)) {
             // Format the submission statement before its sent. We turn off para because this is going within
             // a form element.
@@ -5166,10 +5165,9 @@ class assign {
         $instance = $this->get_instance();
         $data = new stdClass();
         $adminconfig = $this->get_admin_config();
-        $requiresubmissionstatement = $instance->requiresubmissionstatement &&
-                                       !empty($adminconfig->submissionstatement);
+        $requiresubmissionstatement = $instance->requiresubmissionstatement;
 
-        $submissionstatement = '';
+        $submissionstatement = get_string('submissionstatementdefault', 'assign');
         if (!empty($adminconfig->submissionstatement)) {
             // Format the submission statement before its sent. We turn off para because this is going within
             // a form element.
@@ -6378,15 +6376,14 @@ class assign {
         // Submission statement.
         $adminconfig = $this->get_admin_config();
 
-        $requiresubmissionstatement = $this->get_instance()->requiresubmissionstatement &&
-                                       !empty($adminconfig->submissionstatement);
+        $requiresubmissionstatement = $this->get_instance()->requiresubmissionstatement;
 
         $draftsenabled = $this->get_instance()->submissiondrafts;
 
         // Only show submission statement if we are editing our own submission.
         if ($requiresubmissionstatement && !$draftsenabled && $userid == $USER->id) {
 
-            $submissionstatement = '';
+            $submissionstatement = get_string('submissionstatementdefault', 'assign');
             if (!empty($adminconfig->submissionstatement)) {
                 // Format the submission statement before its sent. We turn off para because this is going within
                 // a form element.

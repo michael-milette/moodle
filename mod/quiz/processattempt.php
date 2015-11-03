@@ -82,6 +82,8 @@ if ($timeclose !== false && $timenow > $timeclose - QUIZ_MIN_TIME_TO_CONTINUE) {
 }
 
 // Check login.
+$PAGE->set_url('/mod/quiz/processattempt.php', array('attempt' => $attemptid, 'thispage' => $thispage, 'nextpage' => $nextpage,
+        'next' => $next, 'finishattempt' => $finishattempt, 'timeup' => $timeup, 'scrollpos' => $scrollpos));
 require_login($attemptobj->get_course(), false, $attemptobj->get_cm());
 require_sesskey();
 

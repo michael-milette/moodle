@@ -99,6 +99,9 @@ You can view it here:
 $string['emailteachermailhtml'] = '<p>{$a->username} has completed feedback activity : <i>\'{$a->feedback}\'</i>.</p>
 <p>It is <a href="{$a->url}">available on the site</a>.</p>';
 $string['entries_saved'] = 'Your answers have been saved. Thank you.';
+$string['err_rangevalue'] = 'You must enter a value between {$a->min} and {$a->max}.';
+$string['err_minvalue'] = 'You must enter a minimum value of {$a}.';
+$string['err_maxvalue'] = 'You must enter a maximum value of {$a}.';
 $string['export_questions'] = 'Export questions';
 $string['export_to_excel'] = 'Export to Excel';
 $string['eventresponsedeleted'] = 'Response deleted';

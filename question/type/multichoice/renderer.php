@@ -126,8 +126,17 @@ abstract class qtype_multichoice_renderer_base extends qtype_with_combined_feedb
         $result .= html_writer::tag('div', $question->format_questiontext($qa),
                 array('class' => 'qtext'));
 
+        if ($qa->get_state() == question_state::$invalid) {
+            $result .= html_writer::nonempty_tag('div',
+                    $question->get_validation_error($qa->get_last_qt_data()),
+                    array('class' => 'validationerror'));
+        }
+
         $result .= html_writer::start_tag('div', array('class' => 'ablock'));
-        $result .= html_writer::tag('div', $this->prompt(), array('class' => 'prompt'));
+        $result .= html_writer::start_tag('fieldset');
+        $result .= html_writer::start_tag('div', array('class' => 'prompt'));
+        $result .= html_writer::tag('legend', $this->prompt());
+        $result .= html_writer::end_tag('div');
 
         $result .= html_writer::start_tag('div', array('class' => 'answer'));
         foreach ($radiobuttons as $key => $radio) {
@@ -136,13 +145,8 @@ abstract class qtype_multichoice_renderer_base extends qtype_with_combined_feedb
         }
         $result .= html_writer::end_tag('div'); // Answer.
 
+        $result .= html_writer::end_tag('fieldset');
         $result .= html_writer::end_tag('div'); // Ablock.
-
-        if ($qa->get_state() == question_state::$invalid) {
-            $result .= html_writer::nonempty_tag('div',
-                    $question->get_validation_error($qa->get_last_qt_data()),
-                    array('class' => 'validationerror'));
-        }
 
         return $result;
     }

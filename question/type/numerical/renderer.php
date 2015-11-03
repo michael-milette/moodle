@@ -122,17 +122,17 @@ class qtype_numerical_renderer extends qtype_renderer {
 
         $result = html_writer::tag('div', $questiontext, array('class' => 'qtext'));
 
+        if ($qa->get_state() == question_state::$invalid) {
+            $result .= html_writer::nonempty_tag('div',
+                    $question->get_validation_error(array('answer' => $currentanswer, 'unit' => $selectedunit)),
+                    array('class' => 'validationerror'));
+        }
+
         if (!$placeholder) {
             $result .= html_writer::start_tag('div', array('class' => 'ablock'));
             $result .= html_writer::tag('label', get_string('answercolon', 'qtype_numerical'), array('for' => $inputattributes['id']));
             $result .= html_writer::tag('span', $input, array('class' => 'answer'));
             $result .= html_writer::end_tag('div');
-        }
-
-        if ($qa->get_state() == question_state::$invalid) {
-            $result .= html_writer::nonempty_tag('div',
-                    $question->get_validation_error(array('answer' => $currentanswer, 'unit' => $selectedunit)),
-                    array('class' => 'validationerror'));
         }
 
         return $result;

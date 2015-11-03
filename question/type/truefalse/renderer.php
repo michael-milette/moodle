@@ -99,6 +99,12 @@ class qtype_truefalse_renderer extends qtype_renderer {
         $result .= html_writer::tag('div', $question->format_questiontext($qa),
                 array('class' => 'qtext'));
 
+        if ($qa->get_state() == question_state::$invalid) {
+            $result .= html_writer::nonempty_tag('div',
+                    $question->get_validation_error($responsearray),
+                    array('class' => 'validationerror'));
+        }
+
         $result .= html_writer::start_tag('div', array('class' => 'ablock'));
         $result .= html_writer::tag('div', get_string('selectone', 'qtype_truefalse'),
                 array('class' => 'prompt'));
@@ -111,12 +117,6 @@ class qtype_truefalse_renderer extends qtype_renderer {
         $result .= html_writer::end_tag('div'); // Answer.
 
         $result .= html_writer::end_tag('div'); // Ablock.
-
-        if ($qa->get_state() == question_state::$invalid) {
-            $result .= html_writer::nonempty_tag('div',
-                    $question->get_validation_error($responsearray),
-                    array('class' => 'validationerror'));
-        }
 
         return $result;
     }

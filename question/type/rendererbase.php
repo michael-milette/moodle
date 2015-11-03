@@ -53,10 +53,11 @@ abstract class qtype_renderer extends plugin_renderer_base {
      * In the question output there are some class="accesshide" headers to help
      * screen-readers. This method returns the text to use for the heading above
      * the formulation_and_controls section.
+     * @param string|null $number The question number to display. Null means no number is displayed.
      * @return string to use as the heading.
      */
-    public function formulation_heading() {
-        return get_string('questiontext', 'question');
+    public function formulation_heading($a = null) {
+        return get_string('questiontext', 'question', $a);
     }
 
     /**

@@ -105,7 +105,7 @@ class core_question_renderer extends plugin_renderer_base {
         $output .= html_writer::start_tag('div', array('class' => 'content'));
 
         $output .= html_writer::tag('div',
-                $this->add_part_heading($qtoutput->formulation_heading(),
+                $this->add_part_heading($qtoutput->formulation_heading($number),
                     $this->formulation($qa, $behaviouroutput, $qtoutput, $options)),
                 array('class' => 'formulation'));
         $output .= html_writer::nonempty_tag('div',
