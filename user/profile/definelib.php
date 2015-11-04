@@ -440,6 +440,10 @@ function profile_list_categories() {
     if (!$categories = $DB->get_records_menu('user_info_category', null, 'sortorder ASC', 'id, name')) {
         $categories = array();
     }
+    // Process list of categories through Moodle language filter.
+    foreach($categories as $key => $value) {
+        $categories[$key] = format_string($value);
+    }
     return $categories;
 }
 
@@ -574,6 +578,7 @@ function profile_edit_field($id, $datatype, $redirect) {
         } else {
             $strheading = get_string('profileeditfield', 'admin', $field->name);
         }
+        $strheading = format_string($strheading);
 
         // Print the page.
         $PAGE->navbar->add($strheading);

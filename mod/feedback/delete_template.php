@@ -150,7 +150,7 @@ if ($shoulddelete == 1) {
 
         foreach ($templates as $template) {
             $data = array();
-            $data[] = $template->name;
+            $data[] = format_string($template->name);
             $url = new moodle_url($deleteurl, array(
                                             'id'=>$id,
                                             'deletetempl'=>$template->id,
@@ -190,7 +190,7 @@ if ($shoulddelete == 1) {
 
             foreach ($templates as $template) {
                 $data = array();
-                $data[] = $template->name;
+                $data[] = format_string($template->name);
                 $url = new moodle_url($deleteurl, array(
                                                 'id'=>$id,
                                                 'deletetempl'=>$template->id,

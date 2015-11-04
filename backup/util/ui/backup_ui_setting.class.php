@@ -222,7 +222,7 @@ abstract class backup_setting_ui extends base_setting_ui {
                 $this->name = 'activity_'.$setting->get_name();
                 break;
         }
-        $this->label = $label;
+        $this->label = format_string($label);
         if (is_array($attributes)) {
             $this->attributes = $attributes;
         }
@@ -294,6 +294,8 @@ abstract class backup_setting_ui extends base_setting_ui {
             } else if ($this->setting->get_level() == backup_setting::ACTIVITY_LEVEL) {
                 $this->label = $task->get_name();
             }
+        } else {
+            $this->label = format_string($this->label);
         }
         return $this->label;
     }
@@ -355,7 +357,7 @@ class backup_setting_ui_text extends backup_setting_ui {
      */
     public function get_element_properties(base_task $task = null, renderer_base $output = null) {
         $icon = $this->get_icon();
-        $label = $this->get_label($task);
+        $label = format_string($this->get_label($task));
         if (!empty($icon)) {
             $label .= $output->render($icon);
         }
@@ -418,7 +420,7 @@ class backup_setting_ui_checkbox extends backup_setting_ui {
     public function get_element_properties(base_task $task = null, renderer_base $output = null) {
         // Name, label, text, attributes.
         $icon = $this->get_icon();
-        $label = $this->get_label($task);
+        $label = format_string($this->get_label($task));
         if (!empty($icon)) {
             $label .= $output->render($icon);
         }
@@ -525,7 +527,7 @@ class backup_setting_ui_radio extends backup_setting_ui {
      */
     public function get_element_properties(base_task $task = null, renderer_base $output = null) {
         $icon = $this->get_icon();
-        $label = $this->get_label($task);
+        $label = format_string($this->get_label($task));
         if (!empty($icon)) {
             $label .= $output->render($icon);
         }
@@ -602,7 +604,7 @@ class backup_setting_ui_select extends backup_setting_ui {
      */
     public function get_element_properties(base_task $task = null, renderer_base $output = null) {
         $icon = $this->get_icon();
-        $label = $this->get_label($task);
+        $label = format_string($this->get_label($task));
         if (!empty($icon)) {
             $label .= $output->render($icon);
         }

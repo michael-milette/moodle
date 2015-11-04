@@ -287,8 +287,8 @@ class data_field_base {     // Base class for Database Field Types (see field/*/
             $content='';
         }
 
-        $str = '<div title="' . s($this->field->description) . '">';
-        $str .= '<label for="field_'.$this->field->id.'"><span class="accesshide">'.$this->field->name.'</span>';
+        $str = '<div title="' . format_text(s($this->field->description), FORMAT_HTML, array('noclean'=>true, 'context'=>$this->context, 'allowid'=>true)) . '">';
+        $str .= '<label for="field_'.$this->field->id.'"><span class="accesshide">'.format_string($this->field->name).'</span>';
         if ($this->field->required) {
             $image = html_writer::img($OUTPUT->pix_url('req'), get_string('requiredelement', 'form'),
                                      array('class' => 'req', 'title' => get_string('requiredelement', 'form')));

@@ -295,10 +295,10 @@ if (($mode == 'new') && (!empty($newtype)) && confirm_sesskey()) {          /// 
                 ));
 
                 $table->data[] = array(
-                    html_writer::link($displayurl, $field->field->name),
+                    html_writer::link($displayurl, format_string($field->field->name)),
                     $field->image() . '&nbsp;' . get_string($field->type, 'data'),
                     $field->field->required ? get_string('yes') : get_string('no'),
-                    shorten_text($field->field->description, 30),
+                    shorten_text(format_text($field->field->description), 30),
                     html_writer::link($displayurl, $OUTPUT->pix_icon('t/edit', get_string('edit'))) .
                         '&nbsp;' .
                         html_writer::link($deleteurl, $OUTPUT->pix_icon('t/delete', get_string('delete'))),

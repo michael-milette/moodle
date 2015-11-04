@@ -59,7 +59,7 @@ class profile_field_menu extends profile_field_base {
             $this->options[''] = get_string('choose').'...';
         }
         foreach ($options as $key => $option) {
-            $this->options[$option] = format_string($option); // Multilang formatting with filters.
+            $this->options[$option] = $option;
         }
 
         // Set the data key.
@@ -78,6 +78,9 @@ class profile_field_menu extends profile_field_base {
      * @param moodleform $mform Moodle form instance
      */
     public function edit_field_add($mform) {
+        foreach ($this->options as $key => $option) {
+            $this->options[$key] = format_string($option);
+        }
         $mform->addElement('select', $this->inputname, format_string($this->field->name), $this->options);
     }
 
@@ -87,6 +90,7 @@ class profile_field_menu extends profile_field_base {
      * @param moodleform $mform Moodle form instance
      */
     public function edit_field_set_default($mform) {
+        $this->field->defaultdata = format_string($this->field->defaultdata);
         $key = $this->field->defaultdata;
         if (isset($this->options[$key]) || ($key = array_search($key, $this->options)) !== false){
             $defaultkey = $key;

@@ -220,7 +220,7 @@ if (!empty($forum)) {      // User is starting a new discussion in a forum
     $post->forum       = $forum->id;
     $post->discussion  = $parent->discussion;
     $post->parent      = $parent->id;
-    $post->subject     = $parent->subject;
+    $post->subject     = format_string($parent->subject);
     $post->userid      = $USER->id;
     $post->message     = '';
 

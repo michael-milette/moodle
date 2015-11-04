@@ -100,7 +100,7 @@ class feedback_edit_use_template_form extends moodleform {
             if ($owntemplates) {
                 $courseoptions = array();
                 foreach ($owntemplates as $template) {
-                    $courseoptions[$template->id] = $template->name;
+                    $courseoptions[$template->id] = format_string($template->name);
                 }
                 $options[get_string('course')] = $courseoptions;
             }
@@ -108,7 +108,7 @@ class feedback_edit_use_template_form extends moodleform {
             if ($publictemplates) {
                 $publicoptions = array();
                 foreach ($publictemplates as $template) {
-                    $publicoptions[$template->id] = $template->name;
+                    $publicoptions[$template->id] = format_string($template->name);
                 }
                 $options[get_string('public', 'feedback')] = $publicoptions;
             }

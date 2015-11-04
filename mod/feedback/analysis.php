@@ -111,7 +111,7 @@ $completedscount = feedback_get_completeds_group_count($feedback, $mygroupid);
 
 //show the group, if available
 if ($mygroupid and $group = $DB->get_record('groups', array('id'=>$mygroupid))) {
-    echo '<b>'.get_string('group').': '.$group->name. '</b><br />';
+    echo '<b>'.get_string('group').': '.format_string($group->name). '</b><br />';
 }
 //show the count
 echo '<b>'.get_string('completed_feedbacks', 'feedback').': '.$completedscount. '</b><br />';
