@@ -59,8 +59,7 @@ class profile_field_menu extends profile_field_base {
             $this->options[''] = get_string('choose').'...';
         }
         foreach ($options as $key => $option) {
-            // Multilang formatting with filters.
-            $this->options[$option] = format_string($option, true, ['context' => context_system::instance()]);
+            $this->options[$key] = $option;
         }
 
         // Set the data key.
@@ -89,7 +88,13 @@ class profile_field_menu extends profile_field_base {
      * @param moodleform $mform Moodle form instance
      */
     public function edit_field_add($mform) {
-        $mform->addElement('select', $this->inputname, format_string($this->field->name), $this->options);
+        $options = array();
+        $context = ($this->userid > 0) ? context_user::instance($this->userid) : context_system::instance();
+        foreach($this->options as $key => $option) {
+            // Multilang formatting with filters.
+            $options[$key] = format_string($option, true, array('context' => $context));
+        }
+        $mform->addElement('select', $this->inputname, format_string($this->field->name), $options);
     }
 
     /**
