@@ -93,7 +93,6 @@ if ($mform && $mform->is_cancelled()) {
         $mform->display();
         echo $OUTPUT->footer();
     }
-
 } else if ($action == 'delete') {
 
     if (!optional_param('confirm', false, PARAM_BOOL)) {
