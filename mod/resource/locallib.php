@@ -171,8 +171,7 @@ function resource_get_clicktoopen($file, $revision, $extra='') {
     $filename = $file->get_filename();
     $path = '/'.$file->get_contextid().'/mod_resource/content/'.$revision.$file->get_filepath().$file->get_filename();
     $fullurl = file_encode_url($CFG->wwwroot.'/pluginfile.php', $path, false);
-
-    $string = get_string('clicktoopen2', 'resource', "<a href=\"$fullurl\" $extra>$filename</a>");
+    $string = "<a class=\"btn btn-primary\" href=\"$fullurl\" $extra>" . get_string('resourcedisplayopen') . '</a>';
 
     return $string;
 }
@@ -226,7 +225,6 @@ function resource_print_workaround($resource, $cm, $course, $file) {
             $extra = 'onclick="this.target=\'_blank\'"';
             echo resource_get_clicktoopen($file, $resource->revision, $extra);
             break;
-
         case RESOURCELIB_DISPLAY_DOWNLOAD:
             echo resource_get_clicktodownload($file, $resource->revision);
             break;
