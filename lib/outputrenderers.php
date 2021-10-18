@@ -3404,20 +3404,21 @@ EOD;
      * @return string         HTML with the search form hidden by default.
      */
     public function search_box($id = false) {
-        global $CFG;
-
-        // Accessing $CFG directly as using \core_search::is_global_search_enabled would
-        // result in an extra included file for each site, even the ones where global search
-        // is disabled.
-        if (empty($CFG->enableglobalsearch) || !has_capability('moodle/search:query', context_system::instance())) {
+        if (!has_capability('moodle/search:query', context_system::instance())) {
             return '';
         }
 
+        if (\core_search\manager::is_global_search_enabled()) {
+            $searchstring = get_string('globalsearch', 'search');
+        } else {
+            $searchstring = get_string('searchcourses');
+        }
+
         $data = [
-            'action' => new moodle_url('/search/index.php'),
+            'action' => \core_search\manager::get_course_search_url(),
             'hiddenfields' => (object) ['name' => 'context', 'value' => $this->page->context->id],
             'inputname' => 'q',
-            'searchstring' => get_string('search'),
+            'searchstring' => $searchstring,
             ];
         return $this->render_from_template('core/search_input_navbar', $data);
     }
