@@ -3344,12 +3344,12 @@ EOD;
         // Accessing $CFG directly as using \core_search::is_global_search_enabled would
         // result in an extra included file for each site, even the ones where global search
         // is disabled.
-        if (empty($CFG->enableglobalsearch) || !has_capability('moodle/search:query', context_system::instance())) {
+        if (!has_capability('moodle/search:query', context_system::instance())) {
             return '';
         }
 
         $data = [
-            'action' => new moodle_url('/search/index.php'),
+            'action' => new moodle_url(empty($CFG->enableglobalsearch) ? '/course/search.php' : '/search/index.php'),
             'hiddenfields' => (object) ['name' => 'context', 'value' => $this->page->context->id],
             'inputname' => 'q',
             'searchstring' => get_string('search'),
