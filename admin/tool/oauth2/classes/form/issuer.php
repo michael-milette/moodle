@@ -70,11 +70,12 @@ class issuer extends persistent {
      */
     public function __construct($action = null, $customdata = null, $method = 'post', $target = '', $attributes = null,
                                 $editable = true, array $ajaxformdata = null) {
+        global $CFG;
         // The type variable defines, if we are in the creation process of a standard issuer.
         if (array_key_exists('type', $customdata)) {
             $this->type = $customdata['type'];
         }
-        $this->showrequireconfirm = !empty($customdata['showrequireconfirm']);
+        $this->showrequireconfirm = !empty($customdata['showrequireconfirm']) || !empty($CFG->showrequireconfirm);
         parent::__construct($action, $customdata, $method, $target, $attributes, $editable, $ajaxformdata);
     }
 

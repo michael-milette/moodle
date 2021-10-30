@@ -825,6 +825,10 @@ $CFG->admin = 'admin';
 // Force result of checks used to determine whether a site is considered "public" or not (such as for site registration).
 // $CFG->site_is_public = false;
 //
+// By default, Moodle only offers disabling of confirmation email for Facebook, Google and Microsoft when using OAuth2.
+// This forces Moodle to make this option available for all OAuth2 providers.
+// $CFG->showrequireconfirm = true;
+//
 //=========================================================================
 // 8. FORCED SETTINGS
 //=========================================================================
