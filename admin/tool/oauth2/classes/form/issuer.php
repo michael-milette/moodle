@@ -85,7 +85,7 @@ class issuer extends persistent {
 
         $docslink = optional_param('docslink', '', PARAM_ALPHAEXT);
         if ($docslink) {
-            $name = s($issuer->get('name'));
+            $name = format_string($issuer->get('name'), true, ['context' => \context_system::instance()]);
             $mform->addElement('html', $OUTPUT->doc_link($docslink, get_string('issuersetuptype', 'tool_oauth2', $name)));
         } else {
             $mform->addElement('html', $OUTPUT->page_doc_link(get_string('issuersetup', 'tool_oauth2')));
