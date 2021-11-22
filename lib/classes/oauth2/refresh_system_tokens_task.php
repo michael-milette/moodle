@@ -58,8 +58,10 @@ class refresh_system_tokens_task extends scheduled_task {
         if (empty($admins)) {
             return;
         }
+        $context = \context_system::instance();
         foreach ($admins as $admin) {
-            $strparams = ['siteurl' => $CFG->wwwroot, 'issuer' => $issuer->get('name')];
+            $strparams = ['siteurl' => $CFG->wwwroot,
+                    'issuer' => format_string($issuer->get('name'), true, ['context' => $context])];
             $long = get_string('oauthrefreshtokenexpired', 'core_admin', $strparams);
             $short = get_string('oauthrefreshtokenexpiredshort', 'core_admin', $strparams);
             $message = new \core\message\message();
