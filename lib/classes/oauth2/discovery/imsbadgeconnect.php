@@ -150,8 +150,9 @@ class imsbadgeconnect extends base_definition {
 
                 // Send the registration request.
                 if (!$jsonresponse = $curl->post($url, $jsonrequest)) {
-                    $msg = 'Could not self-register identity issuer: ' . $issuer->get('name') .
-                        ". Wrong URL or JSON data [URL: $url]";
+                    $msg = 'Could not self-register identity issuer: ' .
+                            format_string($issuer->get('name'), true, ['context' => \context_system::instance()]) .
+                            ". Wrong URL or JSON data [URL: $url]";
                     throw new moodle_exception($msg);
                 }
 
@@ -162,8 +163,9 @@ class imsbadgeconnect extends base_definition {
                     $issuer->set('clientsecret', $response->client_secret);
                     $issuer->update();
                 } else {
-                    $msg = 'Could not self-register identity issuer: ' . $issuer->get('name') .
-                        '. Invalid response ' . $jsonresponse;
+                    $msg = 'Could not self-register identity issuer: ' .
+                            format_string($issuer->get('name'), true, ['context' => \context_system::instance()]) .
+                            '. Invalid response ' . $jsonresponse;
                     throw new moodle_exception($msg);
                 }
             }

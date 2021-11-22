@@ -1343,8 +1343,9 @@ function badges_get_oauth2_service_options() {
 
     $issuers = core\oauth2\api::get_all_issuers();
     $options = ['' => 'None'];
+    $context = \context_system::instance();
     foreach ($issuers as $issuer) {
-        $options[$issuer->get('id')] = $issuer->get('name');
+        $options[$issuer->get('id')] = format_string($issuer->get('name'), true, ['context' => $context]);
     }
 
     return $options;

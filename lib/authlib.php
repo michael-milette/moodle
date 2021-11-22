@@ -744,6 +744,7 @@ class auth_plugin_base {
      */
     public static function prepare_identity_providers_for_output($identityproviders, renderer_base $output) {
         $data = [];
+        $context = \context_system::instance();
         foreach ($identityproviders as $idp) {
             if (!empty($idp['icon'])) {
                 // Pre-3.3 auth plugins provide icon as a pix_icon instance. New auth plugins (since 3.3) provide iconurl.
@@ -756,6 +757,7 @@ class auth_plugin_base {
             if ($idp['url'] instanceof moodle_url) {
                 $idp['url'] = $idp['url']->out(false);
             }
+            $idp['name'] = format_string($idp['name'], true, $context);
             $data[] = $idp;
         }
         return $data;

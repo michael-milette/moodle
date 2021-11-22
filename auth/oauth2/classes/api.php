@@ -179,7 +179,7 @@ class api {
         $data->fullname = fullname($user);
         $data->sitename  = format_string($site->fullname);
         $data->admin     = generate_email_signoff();
-        $data->issuername = format_string($issuer->get('name'));
+        $data->issuername = format_string($issuer->get('name'), true, ['context' => \context_system::instance()]);
         $data->linkedemail = format_string($linkedlogin->get('email'));
 
         $subject = get_string('confirmlinkedloginemailsubject', 'auth_oauth2', format_string($site->fullname));
