@@ -65,6 +65,7 @@ class renderer extends plugin_renderer_base {
 
         $index = 0;
 
+        $context = \context_system::instance();
         foreach ($issuers as $issuer) {
             // We need to handle the first and last ones specially.
             $first = false;
@@ -77,10 +78,10 @@ class renderer extends plugin_renderer_base {
             }
 
             // Name.
-            $name = $issuer->get('name');
+            $name = format_string($issuer->get('name'), true, ['context' => $context]);
             $image = $issuer->get('image');
             if ($image) {
-                $name = '<img width="24" height="24" alt="" src="' . s($image) . '"> ' . s($name);
+                $name = '<img width="24" height="24" alt="" src="' . s($image) . '"> ' . $name;
             }
             $namecell = new html_table_cell($name);
             $namecell->header = true;
@@ -90,7 +91,7 @@ class renderer extends plugin_renderer_base {
                 $loginissuer = $this->pix_icon('no', get_string('notloginissuer', 'tool_oauth2'), 'tool_oauth2');
                 $logindisplayas = '';
             } else {
-                $logindisplayas = s($issuer->get_display_name());
+                $logindisplayas = format_string($issuer->get_display_name(), true, ['context' => $context]);
                 if ($issuer->get('id') && $issuer->is_configured() && !empty($issuer->get_endpoint_url('userinfo'))) {
                     $loginissuer = $this->pix_icon('yes', get_string('loginissuer', 'tool_oauth2'), 'tool_oauth2');
                 } else {
@@ -235,10 +236,11 @@ class renderer extends plugin_renderer_base {
 
         $index = 0;
 
+        $context = \context_system::instance();
         foreach ($endpoints as $endpoint) {
             // Name.
             $name = $endpoint->get('name');
-            $namecell = new html_table_cell(s($name));
+            $namecell = new html_table_cell(format_string($name), true, ['context' => $context]);
             $namecell->header = true;
 
             // Url.
