@@ -26,8 +26,9 @@ require_once(__DIR__ . '/../../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
 require_once($CFG->libdir.'/tablelib.php');
 
+$context = \context_system::instance();
 $PAGE->set_url('/admin/tool/oauth2/endpoints.php', ['issuerid' => required_param('issuerid', PARAM_INT)]);
-$PAGE->set_context(context_system::instance());
+$PAGE->set_context($context);
 $PAGE->set_pagelayout('admin');
 $strheading = get_string('pluginname', 'tool_oauth2');
 $PAGE->set_title($strheading);
@@ -55,10 +56,12 @@ if (!empty($endpointid)) {
 
 if ($action == 'edit') {
     if ($endpoint) {
-        $strparams = [ 'issuer' => s($issuer->get('name')), 'endpoint' => s($endpoint->get('name')) ];
+        $strparams = [ 'issuer' => format_string($issuer->get('name'), true, ['context' => $context]),
+                'endpoint' => format_string($endpoint->get('name'), true, ['context' => $context]) ];
         $PAGE->navbar->add(get_string('editendpoint', 'tool_oauth2', $strparams));
     } else {
-        $PAGE->navbar->add(get_string('createnewendpoint', 'tool_oauth2', s($issuer->get('name'))));
+        $PAGE->navbar->add(get_string('createnewendpoint', 'tool_oauth2',
+                format_string($issuer->get('name'), true, ['context' => $context])));
     }
 
     $mform = new \tool_oauth2\form\endpoint(null, ['persistent' => $endpoint, 'issuerid' => $issuerid]);
@@ -83,10 +86,12 @@ if ($mform && $mform->is_cancelled()) {
     } else {
         echo $OUTPUT->header();
         if ($endpoint) {
-            $strparams = [ 'issuer' => s($issuer->get('name')), 'endpoint' => s($endpoint->get('name')) ];
+            $strparams = [ 'issuer' => format_string($issuer->get('name'), true, ['context' => $context]),
+                    'endpoint' => format_string($endpoint->get('name'), true, ['context' => $context]) ];
             echo $OUTPUT->heading(get_string('editendpoint', 'tool_oauth2', $strparams));
         } else {
-            echo $OUTPUT->heading(get_string('createnewendpoint', 'tool_oauth2', s($issuer->get('name'))));
+            echo $OUTPUT->heading(get_string('createnewendpoint', 'tool_oauth2',
+                    format_string($issuer->get('name'), true, ['context' => $context])));
         }
         $mform->display();
         echo $OUTPUT->footer();
@@ -105,7 +110,8 @@ if ($mform && $mform->is_cancelled()) {
         $continueurl = new moodle_url('/admin/tool/oauth2/endpoints.php', $continueparams);
         $cancelurl = new moodle_url('/admin/tool/oauth2/endpoints.php');
         echo $OUTPUT->header();
-        $strparams = [ 'issuer' => s($issuer->get('name')), 'endpoint' => s($endpoint->get('name')) ];
+        $strparams = [ 'issuer' => format_string($issuer->get('name'), true, ['context' => $context]),
+                'endpoint' => s($endpoint->get('name')) ];
         echo $OUTPUT->confirm(get_string('deleteendpointconfirm', 'tool_oauth2', $strparams), $continueurl, $cancelurl);
         echo $OUTPUT->footer();
     } else {
@@ -116,11 +122,13 @@ if ($mform && $mform->is_cancelled()) {
 
 } else {
     echo $OUTPUT->header();
-    echo $OUTPUT->heading(get_string('endpointsforissuer', 'tool_oauth2', s($issuer->get('name'))));
+    echo $OUTPUT->heading(get_string('endpointsforissuer', 'tool_oauth2',
+            format_string($issuer->get('name'), true, ['context' => $context])));
     $endpoints = core\oauth2\api::get_endpoints($issuer);
     echo $renderer->endpoints_table($endpoints, $issuerid);
 
     $addurl = new moodle_url('/admin/tool/oauth2/endpoints.php', ['action' => 'edit', 'issuerid' => $issuerid]);
-    echo $renderer->single_button($addurl, get_string('createnewendpoint', 'tool_oauth2', s($issuer->get('name'))));
+    echo $renderer->single_button($addurl, get_string('createnewendpoint', 'tool_oauth2',
+            format_string($issuer->get('name'), true, ['context' => $context])));
     echo $OUTPUT->footer();
 }
