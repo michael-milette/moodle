@@ -114,7 +114,8 @@ abstract class base_definition {
 
         $curl = new curl();
         if (!$json = $curl->get($url)) {
-            $msg = 'Could not discover end points for identity issuer: ' . $issuer->get('name') . " [URL: $url]";
+            $msg = 'Could not discover end points for identity issuer: ' .
+                    format_string($issuer->get('name'), true, ['context' => \context_system::instance()]) . " [URL: $url]";
             throw new moodle_exception($msg);
         }
 
