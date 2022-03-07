@@ -3428,6 +3428,23 @@ EOD;
         if (empty($custommenuitems) && !empty($CFG->custommenuitems)) {
             $custommenuitems = $CFG->custommenuitems;
         }
+
+        // If filtering of the primary custom menu is enabled, apply the filters.
+        if (!empty($CFG->navfilter)) {
+            // Build filter exclusion list using filters specified in the advanced theme settings.
+            // Convert csv to array, trim all filter names, and remove duplicates and empty values.
+            $skipfilters = array_filter(array_unique(array_map('trim', explode(',', $CFG->navfiltersexcluded))));
+            $filteroptions = ['originalformat' => FORMAT_HTML, 'noclean' => true];
+            $filtermanager = filter_manager::instance();
+            // Process the custom menu items through the filter manager.
+            $custommenuitems = $filtermanager->filter_text(
+                $custommenuitems,
+                \context_system::instance(),
+                $filteroptions,
+                $skipfilters
+            );
+        }
+
         $custommenu = new custom_menu($custommenuitems, current_language());
         return $this->render_custom_menu($custommenu);
     }
@@ -3443,6 +3460,23 @@ EOD;
         if (empty($custommenuitems) && !empty($CFG->custommenuitems)) {
             $custommenuitems = $CFG->custommenuitems;
         }
+
+        // If filtering of the primary custom menu is enabled, apply the filters.
+        if (!empty($CFG->navfilter)) {
+            // Build filter exclusion list using filters specified in the advanced theme settings.
+            // Convert csv to array, trim all filter names, and remove duplicates and empty values.
+            $skipfilters = array_filter(array_unique(array_map('trim', explode(',', $CFG->navfiltersexcluded))));
+            $filteroptions = ['originalformat' => FORMAT_HTML, 'noclean' => true];
+            $filtermanager = filter_manager::instance();
+            // Process the custom menu items through the filter manager.
+            $custommenuitems = $filtermanager->filter_text(
+                $custommenuitems,
+                \context_system::instance(),
+                $filteroptions,
+                $skipfilters
+            );
+        }
+
         $custommenu = new custom_menu($custommenuitems, current_language());
         $langs = get_string_manager()->get_list_of_translations();
         $haslangmenu = $this->lang_menu() != '';
