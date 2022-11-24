@@ -3698,6 +3698,8 @@ class admin_setting_configmultiselect extends admin_setting_configselect {
         $default = $this->get_defaultsetting();
         if (is_null($default)) {
             $default = array();
+        } else if (is_string($default)) {
+            $default = array($default);
         }
         if (is_null($data)) {
             $data = array();
