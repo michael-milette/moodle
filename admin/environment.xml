@@ -3931,7 +3931,7 @@
       </FEEDBACK>
     </UNICODE>
     <DATABASE level="required">
-      <VENDOR name="mariadb" version="10.6.7" />
+      <VENDOR name="mariadb" version="10.4.28" />
       <VENDOR name="mysql" version="8.0" />
       <VENDOR name="postgres" version="13" />
       <VENDOR name="mssql" version="14.0" />
