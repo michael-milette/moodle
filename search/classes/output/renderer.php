@@ -87,6 +87,9 @@ class renderer extends \plugin_renderer_base {
         }
         $content .= \html_writer::tag('div', implode('<hr/>', $resultshtml), array('class' => 'search-results'));
 
+        // Process through Moodle filters.
+        $content = format_text($content, FORMAT_HTML, ['context' => \context_system::instance()]);
+
         // Paging bar.
         $content .= $this->output->paging_bar($totalcount, $page, $perpage, $url);
 
@@ -119,6 +122,8 @@ class renderer extends \plugin_renderer_base {
      * @return string HTML
      */
     public function render_result(\core_search\document $doc) {
+        $context = \context_system::instance();
+
         $docdata = $doc->export_for_template($this);
 
         // Limit text fields size.
@@ -126,6 +131,12 @@ class renderer extends \plugin_renderer_base {
         $docdata['content'] = $docdata['content'] ? shorten_text($docdata['content'], static::SEARCH_RESULT_TEXT_SIZE, true) : '';
         $docdata['description1'] = $docdata['description1'] ? shorten_text($docdata['description1'], static::SEARCH_RESULT_TEXT_SIZE, true) : '';
         $docdata['description2'] = $docdata['description2'] ? shorten_text($docdata['description2'], static::SEARCH_RESULT_TEXT_SIZE, true) : '';
+
+        // Process through Moodle filters.
+        $docdata['title'] = format_string($docdata['title'], false, ['context' => $context]);
+        $docdata['content'] = format_text($docdata['content'], FORMAT_HTML, ['context' => $context]);
+        $docdata['description1'] = format_text($docdata['description1'], FORMAT_HTML, ['context' => $context]);
+        $docdata['description2'] = format_text($docdata['description2'], FORMAT_HTML, ['context' => $context]);
 
         return $this->output->render_from_template('core_search/result', $docdata);
     }
